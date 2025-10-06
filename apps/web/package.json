@@ -3,9 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "cross-env-shell PORT=${WEB_PORT:-6500} next dev --turbopack",
+    "dev": "node scripts/dev.js",
     "build": "next build",
-    "start": "cross-env-shell PORT=${WEB_PORT:-6500} next start",
+    "start": "node scripts/start.js",
     "lint": "next lint"
   },
   "dependencies": {
@@ -39,7 +39,6 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
-    "cross-env-shell": "^7.0.3",
     "date-fns": "^4.1.0",
     "embla-carousel-react": "^8.6.0",
     "input-otp": "^1.4.2",
