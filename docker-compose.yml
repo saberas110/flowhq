@@ -1,0 +1,62 @@
+version: "3.8"
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    ports:
+      - "${API_PORT:-4500}:4500"
+    environment:
+      - NODE_ENV=production
+      - APP_PORT=${API_PORT:-4500}
+      - DATABASE_HOST=${DATABASE_HOST}
+      - DATABASE_PORT=${DATABASE_PORT:-5432}
+      - DATABASE_USERNAME=${DATABASE_USERNAME}
+      - DATABASE_PASSWORD=${DATABASE_PASSWORD}
+      - DATABASE_NAME=${DATABASE_NAME}
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET}
+      - JWT_EXPIRES_IN=${JWT_EXPIRES_IN:-3600}
+      - JWT_REFRESH_EXPIRES_IN=${JWT_REFRESH_EXPIRES_IN:-604800}
+      - FRONTEND_URL=${FRONTEND_URL}
+    restart: unless-stopped
+    networks:
+      - default
+      - coolify
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    ports:
+      - "${WEB_PORT:-6500}:6500"
+    environment:
+      - NODE_ENV=production
+      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+    depends_on:
+      - api
+    restart: unless-stopped
+    networks:
+      - default
+
+  cms:
+    build:
+      context: .
+      dockerfile: apps/cms/Dockerfile
+    ports:
+      - "${CMS_PORT:-7000}:7000"
+    environment:
+      - NODE_ENV=production
+      - VITE_API_URL=${VITE_API_URL}
+      - VITE_CLERK_PUBLISHABLE_KEY=${VITE_CLERK_PUBLISHABLE_KEY}
+    depends_on:
+      - api
+    restart: unless-stopped
+    networks:
+      - default
+
+networks:
+  coolify:
+    external: true
+    name: coolify
