@@ -16,7 +16,7 @@ export default function HeroSection({ onStartTrial, onWatchDemo }: HeroSectionPr
               Account Representative
             </span>
           </h1>
-          <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
+          <p className="text-xl py-4 text-gray-600 mb-8 max-w-3xl mx-auto">
             Never miss a customer again. RepAi handles all your inbound
             communications across web, social, email, and voice with
             human-like intelligence.

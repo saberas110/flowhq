@@ -8,7 +8,7 @@ export default function FeaturesSection() {
           <h2 className="text-4xl font-bold text-gray-900 mb-4">
             Everything you need in one platform
           </h2>
-          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+          <p className="text-xl text-gray-600 w-full flex items-center justify-center ">
             From first contact to ongoing account management, RepAi handles it
             all
           </p>
