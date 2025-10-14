@@ -17,7 +17,7 @@ export default function CTASection({ onStartTrial }: CTASectionProps) {
         </p>
         <button
           onClick={onStartTrial}
-          className="bg-white text-blue-600 px-8 py-4 rounded-lg text-lg font-semibold hover:bg-gray-100 transition-colors inline-flex items-center"
+          className="bg-white text-blue-600 mt-5 px-8 py-4 rounded-lg text-lg font-semibold hover:bg-gray-100 transition-colors inline-flex items-center"
         >
           Start Your Free Trial
           <ArrowRight className="ml-2 h-5 w-5" />
