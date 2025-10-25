@@ -1,11 +1,11 @@
 import * as React from "react";
 
-const Logo = (props: React.SVGProps<SVGSVGElement>) => (
+const Logo = () => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
-    viewBox="0 0 437 74"
+    viewBox="0 0 440 74"
     fill="none"
-    {...props}
+    className="h-5 w-auto"
   >
     <path
       fill="#4169e1"
