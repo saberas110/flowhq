@@ -12,7 +12,7 @@ interface Testimonial {
 const testimonials: Testimonial[] = [
   {
     rating: 5,
-    content: "RepAi has completely transformed our customer service. We never miss a lead now, and our response time went from hours to seconds.",
+    content: "FlowHQ has completely transformed our customer service. We never miss a lead now, and our response time went from hours to seconds.",
     author: "Sarah Miller",
     position: "Founder, TechStart",
     initials: "SM",
@@ -45,7 +45,7 @@ export default function TestimonialsSection() {
             Trusted by thousands of businesses
           </h2>
           <p className="text-xl text-gray-600">
-            See how RepAi is transforming customer relationships
+            See how FlowHQ is transforming customer relationships
           </p>
         </div>
 

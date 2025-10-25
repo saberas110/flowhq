@@ -156,7 +156,7 @@ const Integrations: React.FC = () => {
             Integrations
           </h1>
           <p className="text-gray-600">
-            Connect your favorite tools and platforms with RepAi
+            Connect your favorite tools and platforms with FlowHQ
           </p>
         </div>
         <div className="flex items-center space-x-4">

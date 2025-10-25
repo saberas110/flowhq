@@ -37,7 +37,7 @@ const Settings: React.FC = () => {
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">Settings</h1>
         <p className="text-gray-600">
-          Manage your RepAi configuration and preferences
+          Manage your FlowHQ configuration and preferences
         </p>
       </div>
 
@@ -141,7 +141,7 @@ const Settings: React.FC = () => {
                     </label>
                     <input
                       type="text"
-                      defaultValue="RepAi Technologies"
+                      defaultValue="FlowHQ Technologies"
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     />
                   </div>
@@ -184,7 +184,7 @@ const Settings: React.FC = () => {
                       </label>
                       <input
                         type="text"
-                        defaultValue="RepAi Assistant"
+                        defaultValue="FlowHQ Assistant"
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       />
                     </div>

@@ -12,7 +12,7 @@ export default function CTASection({ onStartTrial }: CTASectionProps) {
           Ready to transform your customer relationships?
         </h2>
         <p className="text-xl text-blue-100 mb-8">
-          Join thousands of businesses using RepAi to never miss another
+          Join thousands of businesses using FlowHQ to never miss another
           customer.
         </p>
         <button

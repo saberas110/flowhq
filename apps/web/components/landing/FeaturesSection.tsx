@@ -9,7 +9,7 @@ export default function FeaturesSection() {
             Everything you need in one platform
           </h2>
           <p className="text-xl text-gray-600 w-full flex items-center justify-center ">
-            From first contact to ongoing account management, RepAi handles it
+            From first contact to ongoing account management, FlowHQ handles it
             all
           </p>
         </div>

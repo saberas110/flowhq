@@ -17,7 +17,7 @@ export default function HeroSection({ onStartTrial, onWatchDemo }: HeroSectionPr
             </span>
           </h1>
           <p className="text-xl py-4 text-gray-600 mb-8 max-w-3xl mx-auto">
-            Never miss a customer again. RepAi handles all your inbound
+            Never miss a customer again. FlowHQ handles all your inbound
             communications across web, social, email, and voice with
             human-like intelligence.
           </p>

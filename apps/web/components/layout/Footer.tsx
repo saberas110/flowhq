@@ -1,4 +1,4 @@
-import { Bot } from 'lucide-react';
+import Logo from './Logo';
 
 export default function Footer() {
   return (
@@ -7,8 +7,7 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div>
             <div className="flex items-center mb-4">
-              <Bot className="h-8 w-8 text-blue-400 mr-2" />
-              <span className="font-bold text-xl">RepAi</span>
+              <Logo className="h-8 w-auto" />
             </div>
             <p className="text-gray-400">
               The autonomous AI account representative platform for modern
@@ -92,7 +91,7 @@ export default function Footer() {
           </div>
         </div>
         <div className="border-t border-gray-800 mt-8 pt-8 flex justify-between items-center">
-          <p className="text-gray-400">© 2025 RepAi. All rights reserved.</p>
+          <p className="text-gray-400">© 2025 FlowHQ. All rights reserved.</p>
           <div className="flex space-x-6">
             <a
               href="#"
