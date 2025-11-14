@@ -29,15 +29,41 @@ export interface IChangePasswordDto {
 }
 
 export interface IAuthResponse {
-  access_token: string;
+  accessToken: string;
+  refreshToken: string;
   user: {
     id: string;
     email: string;
     firstName: string;
     lastName: string;
-    roles?: Array<{
+    roles: string[];
+  };
+}
+
+export interface IAuthTokens {
+  accessToken: string;
+  refreshToken: string;
+}
+
+export interface IUserProfile {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  isActive: boolean;
+  isEmailVerified: boolean;
+  roles: Array<{
+    id: string;
+    name: string;
+    description: string;
+    permissions: Array<{
       id: string;
       name: string;
+      description: string;
+      resource: string;
+      action: string;
     }>;
-  };
+  }>;
+  createdAt: Date;
+  updatedAt: Date;
 }
