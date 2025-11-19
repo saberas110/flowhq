@@ -9,13 +9,14 @@ https://docs.djangoproject.com/en/5.2/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
-
+import os
+from datetime import timedelta
 from pathlib import Path
-
-
+from dotenv import load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+load_dotenv(BASE_DIR / '.env')
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
@@ -31,6 +32,7 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
+    'daphne',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -39,6 +41,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'accounts',
     'chat_manager',
+    'rest_framework_simplejwt'
 
 ]
 
@@ -46,6 +49,8 @@ MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
+    'accounts.middleware.RefreshJWTMiddleware',
+    'accounts.middleware.AttachTokenMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
@@ -70,6 +75,7 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'api.wsgi.application'
+ASGI_APPLICATION = 'api.asgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
@@ -82,6 +88,15 @@ DATABASES = {
         'PASSWORD': 'postgres',
         'HOST': '127.0.0.1',
         'PORT': '5432',
+    }
+}
+
+CHANNEL_LAYER = {
+    'default': {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [("127.0.0.1", 6379)]
+        }
     }
 }
 
@@ -125,3 +140,34 @@ STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 AUTH_USER_MODEL = 'accounts.User'
+
+REST_FRAMEWORK = {
+    "DEFAULT_AUTHENTICATION_CLASSES": [
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ]
+}
+
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(),
+    "REFRESH_TOKEN_LIFETIME": timedelta(),
+    'SIGNING_KEY': SECRET_KEY,
+    'ALGORITHM': 'HS256',
+    # 'VERIFYING_KEY': None,
+}
+
+CORS_ALLOW_CREDENTIAL = True
+CORS_ALLOW_ORIGIN = []
+CSRF_TRUSTED_ORIGINS = []
+CSRF_COOKIE_SAMESITE = 'lax'
+CSRF_COOKIE_HTTPONLY = True
+CSRF_COOKIE_SECURE = True
+
+GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID")
+GOOGLE_CLIENT_SECRET = os.environ.get("GOOGLE_CLIENT_SECRET")
+GOOGLE_REDIRECT_URI = "http://127.0.0.1:8000/api/accounts/auth/google/callback/"
+
+SESSION_COOKIE_SECURE = False
+SESSION_COOKIE_SAMESITE = None
+SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_PATH = "/"
+SESSION_ENGINE = "django.contrib.sessions.backends.db"

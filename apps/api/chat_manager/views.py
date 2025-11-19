@@ -1,13 +1,14 @@
 import json
 
 from django.contrib.auth import get_user_model
+from django.db.models import Max
 from rest_framework import status
-from rest_framework.exceptions import ValidationError
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from chat_manager.handle_whatsapp_hook import WhatsAppHook
-from chat_manager.models import Conversation, Message, ServiceAccount
+from chat_manager.models import Conversation, Message, ServiceAccount, Organization
 from chat_manager.serializers import ConversationSerializer, MessageSerializer
 
 User = get_user_model()
@@ -20,10 +21,15 @@ class WhatsApp(APIView):
 
 
 class Conversations(APIView):
+    # permission_classes = [IsAuthenticated,]
     def get(self, request):
-        query = Conversation.objects.all()
+        user = User.objects.get(email='s@s.com')
+        query = (Conversation.objects.filter(service_account__organization__owner=user)
+                 .annotate(last_message_time=Max('messages__created_at'))
+                 .order_by('last_message_time')
+                 .distinct())
         srz_data = ConversationSerializer(query, many=True)
-
+        print('srz_data is:', srz_data.data)
         return Response({'data': srz_data.data})
 
 
