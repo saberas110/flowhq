@@ -1,10 +1,8 @@
 import json
-
 from channels.db import database_sync_to_async
 from channels.generic.websocket import AsyncWebsocketConsumer
 from django.contrib.auth import get_user_model
 from rest_framework.exceptions import ValidationError
-from txaio.tx import reject
 
 
 class PresenceConsumer(AsyncWebsocketConsumer):
@@ -92,7 +90,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
     @database_sync_to_async
     def _get_or_create_conversation_id(self, contact_user_id):
         from .models import Conversation
-        from .models import ServiceAccount
+        from .models import Organization
         User = get_user_model()
 
         try:
@@ -100,9 +98,13 @@ class ChatConsumer(AsyncWebsocketConsumer):
         except User.DoesNotExist:
             raise ValidationError("We get a contact_user_id. but its Not in Users. maybe its deleted")
 
-        conversation = Conversation.objects.filter(service_account__organization__owner=self.user, contact_id=contact_user_id)
+        conversation = Conversation.objects.filter(organization__owner=self.user, contact_id=contact_user_id)
         if not conversation:
             try:
-                service_account = ServiceAccount.objects.get()
-            conversation = Conversation.objects.create()
+                organization = Organization.objects.get(owner=self.user)
+                conversation = Conversation.objects.create(organization=organization, contact_id=contact_user_id)
+            except Organization.DoesNotExist:
+                raise ValidationError("this user not relation with any organization")
+        return conversation.id
+
 

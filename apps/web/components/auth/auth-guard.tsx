@@ -23,9 +23,9 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
     );
   }
 
-  if (!isAuthenticated) {
-    return null;
-  }
+  // if (!isAuthenticated) {
+  //   return null;
+  // }
 
   return <>{children}</>;
 }

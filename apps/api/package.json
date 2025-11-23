@@ -1,0 +1,10 @@
+{
+"name":"chat_manager",
+"scripts":{
+"dev": "bash -c 'source \"/home/saber/Desktop/New Folder 2/flowHQ/apps/venv/bin/activate\" && python3 manage.py runserver'"
+
+
+}
+
+
+}

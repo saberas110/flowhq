@@ -52,12 +52,12 @@ class ServiceAccount(CreatedAtMixin):
 
 
 class Conversation(CreatedAtMixin, UpdatedAtMixin):
-    service_account = models.ForeignKey(ServiceAccount, models.CASCADE, related_name='conversations')
+    organization = models.ForeignKey(Organization, models.CASCADE, related_name='conversations',  blank=True, null=True)
     contact_id = models.CharField(max_length=255)
     title = models.CharField(max_length=100, null=True, blank=True)
 
     def __str__(self):
-        return f'{self.contact_id}--{self.service_account.phone_number}'
+        return f'{self.contact_id}--'
 
 
 class Message(CreatedAtMixin, UpdatedAtMixin):

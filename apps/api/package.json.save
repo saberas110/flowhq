@@ -1,0 +1,10 @@
+{
+"name":"chat_manager",
+"scripts":{
+"dev": "/python manage.py runserver"
+
+
+}
+
+
+}

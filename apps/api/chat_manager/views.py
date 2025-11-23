@@ -24,7 +24,7 @@ class Conversations(APIView):
     # permission_classes = [IsAuthenticated,]
     def get(self, request):
         user = User.objects.get(email='s@s.com')
-        query = (Conversation.objects.filter(service_account__organization__owner=user)
+        query = (Conversation.objects.filter(organization__owner=user)
                  .annotate(last_message_time=Max('messages__created_at'))
                  .order_by('last_message_time')
                  .distinct())
