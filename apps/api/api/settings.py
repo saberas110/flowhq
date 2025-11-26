@@ -22,12 +22,12 @@ load_dotenv(BASE_DIR / '.env')
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-1te4w%w*9&k#4#82(-f!__jf+!duv*_%(zo4en6d+25bx91e8c'
+SECRET_KEY = os.environ.get("SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "").split(",")
 
 # Application definition
 
@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'accounts',
+    'corsheaders',
     'chat_manager',
     'rest_framework_simplejwt'
 
@@ -83,11 +84,11 @@ ASGI_APPLICATION = 'api.asgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'whatsapp',
-        'USER': 'postgres',
-        'PASSWORD': 'postgres',
-        'HOST': '127.0.0.1',
-        'PORT': '5432',
+        'NAME': os.environ.get("DATABASE_NAME"),
+        'USER': os.environ.get("DATABASE_USER"),
+        'PASSWORD': os.environ.get("DATABASE_PASS"),
+        'HOST': os.environ.get("HOST"),
+        'PORT': os.environ.get("DATABASE_PORT"),
     }
 }
 
@@ -95,7 +96,7 @@ CHANNEL_LAYER = {
     'default': {
         "BACKEND": "channels_redis.core.RedisChannelLayer",
         "CONFIG": {
-            "hosts": [("127.0.0.1", 6379)]
+            "hosts": [(os.getenv("HOST"), int(os.getenv("REDIS_PORT", 6379)))]
         }
     }
 }
@@ -148,26 +149,28 @@ REST_FRAMEWORK = {
 }
 
 SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(),
-    "REFRESH_TOKEN_LIFETIME": timedelta(),
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=5),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
     'SIGNING_KEY': SECRET_KEY,
     'ALGORITHM': 'HS256',
-    # 'VERIFYING_KEY': None,
 }
 
+
 CORS_ALLOW_CREDENTIAL = True
-CORS_ALLOW_ORIGIN = []
-CSRF_TRUSTED_ORIGINS = []
-CSRF_COOKIE_SAMESITE = 'lax'
+CORS_ALLOW_ORIGIN = os.getenv("FRONT_URL", "").split(",")
+CSRF_TRUSTED_ORIGINS = os.getenv("FRONT_URL", "").split(",")
+CSRF_COOKIE_SAMESITE = None
 CSRF_COOKIE_HTTPONLY = True
 CSRF_COOKIE_SECURE = True
 
 GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID")
 GOOGLE_CLIENT_SECRET = os.environ.get("GOOGLE_CLIENT_SECRET")
-GOOGLE_REDIRECT_URI = "http://127.0.0.1:8000/api/accounts/auth/google/callback/"
+GOOGLE_REDIRECT_URI = os.environ.get("GOOGLE_REDIRECT_URI")
 
 SESSION_COOKIE_SECURE = False
 SESSION_COOKIE_SAMESITE = None
 SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_PATH = "/"
 SESSION_ENGINE = "django.contrib.sessions.backends.db"
+
+FRONTEND_LOGIN_SUCCESS_URL = os.environ.get("FRONTEND_LOGIN_SUCCESS_URL")

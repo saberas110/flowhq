@@ -1,4 +1,3 @@
-# views.py
 import urllib.parse
 import secrets
 import requests
@@ -7,6 +6,10 @@ from django.shortcuts import redirect
 from django.http import JsonResponse
 from django.views import View
 from authlib.jose import jwt, JsonWebKey
+from rest_framework import status
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import get_user_model
 
@@ -14,6 +17,7 @@ User = get_user_model()
 
 class GoogleLogin(View):
     def get(self, request):
+        print('request.url', request)
         state = secrets.token_urlsafe(32)
         request.session["oauth_state"] = state
 
@@ -27,16 +31,20 @@ class GoogleLogin(View):
             "prompt": "consent",
         }
         url = "https://accounts.google.com/o/oauth2/v2/auth?" + urllib.parse.urlencode(params)
+        print('redirect_url', url)
+
         return redirect(url)
 
 
 class GoogleCallBack(View):
     def get(self, request):
+        print('from callback')
         state = request.GET.get('state')
         print('call state is  :', state)
 
 
         saved_state = request.session.get("oauth_state")
+        print('save_state')
         if not saved_state:
             print("No saved state in session (session might be missing)")
         if state != saved_state:
@@ -87,9 +95,7 @@ class GoogleCallBack(View):
             return JsonResponse({'error': 'email not found or not verified'}, status=400)
 
 
-        user, created = User.objects.get_or_create(email=email, defaults={
-            "username": email.split("@")[0]
-        })
+        user, created = User.objects.get_or_create(email=email)
 
 
         refresh = RefreshToken.for_user(user)
@@ -104,18 +110,14 @@ class GoogleCallBack(View):
             value=access_str,
             httponly=True,
             secure=not settings.DEBUG,
-            samesite="Lax",
-            max_age=300,
-            path="/",
+            samesite='lax',
         )
         response.set_cookie(
             key="refresh",
             value=refresh_str,
             httponly=True,
             secure=not settings.DEBUG,
-            samesite="Lax",
-            max_age=7 * 24 * 3600,
-            path="/api/accounts/auth/refresh/",
+            samesite='lax',
         )
 
         try:
@@ -124,3 +126,9 @@ class GoogleCallBack(View):
             pass
 
         return response
+
+
+class UserStatus(APIView):
+    permission_classes = [IsAuthenticated,]
+    def get(self, request):
+        return Response({'UserStatus': 'Authenticated'}, status=status.HTTP_200_OK)

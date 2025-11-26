@@ -441,6 +441,9 @@ importers:
       '@repo/shared':
         specifier: workspace:*
         version: link:../../packages/shared
+      axios:
+        specifier: ^1.11.0
+        version: 1.12.2
       class-variance-authority:
         specifier: ^0.7.1
         version: 0.7.1

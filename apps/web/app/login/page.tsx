@@ -1,9 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { useAuthStore } from '@/stores/auth-store';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -11,8 +9,6 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import Logo from '@/components/layout/Logo';
 
 export default function LoginPage() {
-  const router = useRouter();
-  const login = useAuthStore((state) => state.login);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [formData, setFormData] = useState({
@@ -24,16 +20,7 @@ export default function LoginPage() {
     e.preventDefault();
     setError('');
     setIsLoading(true);
-
-    try {
-      await login(formData.email, formData.password);
-      router.push('/dashboard');
-    } catch (err: any) {
-      setError(err.message || 'Failed to login. Please check your credentials.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData((prev) => ({
@@ -60,7 +47,6 @@ export default function LoginPage() {
           <CardContent className="space-y-4">
             {error && (
               <div className="p-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded-md">
-                {error}
               </div>
             )}
             <div className="space-y-2">

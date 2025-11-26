@@ -21,6 +21,7 @@ RUN pnpm install --frozen-lockfile
 
 # Build the web app
 WORKDIR /app/apps/web
+
 RUN pnpm build
 
 # Use a minimal Node.js runtime for the production image

@@ -11,16 +11,13 @@ import {
 } from "lucide-react";
 
 import { NavMain } from "./nav-main";
-import { NavUser } from "./nav-user";
 import { AppBranding } from "./app-branding";
 import {
   Sidebar,
   SidebarContent,
-  SidebarFooter,
   SidebarHeader,
   SidebarRail,
 } from "@/components/ui/sidebar";
-import { useAuthStore } from "@/stores/auth-store";
 
 const data = {
   user: {
@@ -175,15 +172,7 @@ const data = {
 };
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-  const user = useAuthStore((state) => state.user);
 
-  const userData = user
-    ? {
-        name: `${user.firstName} ${user.lastName}`,
-        email: user.email,
-        avatar: "/avatars/user.jpg",
-      }
-    : data.user;
 
   return (
     <Sidebar collapsible="icon" {...props}>
@@ -193,9 +182,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       <SidebarContent>
         <NavMain items={data.navMain} />
       </SidebarContent>
-      <SidebarFooter>
-        <NavUser user={userData} />
-      </SidebarFooter>
+      {/*<SidebarFooter>*/}
+      {/*  <NavUser user={userData} />*/}
+      {/*</SidebarFooter>*/}
       <SidebarRail />
     </Sidebar>
   );

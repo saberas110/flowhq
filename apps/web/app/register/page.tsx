@@ -1,9 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { useAuthStore } from '@/stores/auth-store';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -11,8 +9,6 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import Logo from '@/components/layout/Logo';
 
 export default function RegisterPage() {
-  const router = useRouter();
-  const register = useAuthStore((state) => state.register);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [formData, setFormData] = useState({
@@ -38,21 +34,8 @@ export default function RegisterPage() {
     }
 
     setIsLoading(true);
+  }
 
-    try {
-      await register({
-        email: formData.email,
-        firstName: formData.firstName,
-        lastName: formData.lastName,
-        password: formData.password,
-      });
-      router.push('/dashboard');
-    } catch (err: any) {
-      setError(err.message || 'Failed to create account. Please try again.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData((prev) => ({

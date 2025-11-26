@@ -30,8 +30,10 @@ class RefreshJWTMiddleware:
             try:
                 AccessToken(access)
                 validate_token = JWTAuthentication().get_validated_token(access)
-                JWTAuthentication().get_user(validate_token)
+                user = JWTAuthentication().get_user(validate_token)
+                print('in access user is', user)
             except ExpiredTokenError:
+                print('expired error ')
                 if refresh:
                     try:
                         refresh = RefreshToken(refresh)
@@ -39,15 +41,19 @@ class RefreshJWTMiddleware:
                         request.COOKIES['access'] = new_access
                         validate_token = JWTAuthentication().get_validated_token(new_access)
                         user = JWTAuthentication().get_user(validate_token)
-                    except TokenError:
+                        print('user in refresh midd', user)
+                    except Exception as e:
+                        print('token error e :', e)
                         pass
             except AuthenticationFailed:
-                user = AnonymousUser()
-                access = None
+                print('authentication field')
+                pass
             except (TokenError, InvalidToken):
+                print('token error , invalid token')
                 pass
 
         request.user = user
+        print('user in middleware', user)
         response = self.get_response(request)
         if new_access:
             response.set_cookie(
@@ -55,6 +61,6 @@ class RefreshJWTMiddleware:
                 value= new_access,
                 httponly=True,
                 secure=False,
-                samesite='lax'
+                samesite='lax',
             )
         return response

@@ -1,5 +1,4 @@
 import './global.css';
-import { AuthInit } from '@/components/auth/auth-init';
 
 export const metadata = {
   title: 'FlowHQ - AI Automation Platform',
@@ -14,7 +13,6 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        {/*<AuthInit />*/}
         {children}
       </body>
     </html>

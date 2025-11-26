@@ -1,14 +1,12 @@
 import {
   ILoginDto,
-  IRegisterDto,
   IAuthResponse,
   IAuthTokens,
   IUserProfile,
-  IRefreshTokenDto,
   IChangePasswordDto,
 } from "@repo/shared";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4500";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
 class ApiClient {
   private baseUrl: string;
@@ -44,12 +42,6 @@ class ApiClient {
     return response.json();
   }
 
-  async register(data: IRegisterDto): Promise<IAuthResponse> {
-    return this.request<IAuthResponse>("/auth/register", {
-      method: "POST",
-      body: JSON.stringify(data),
-    });
-  }
 
   async login(data: ILoginDto): Promise<IAuthResponse> {
     return this.request<IAuthResponse>("/auth/login", {
@@ -77,6 +69,10 @@ class ApiClient {
         Authorization: `Bearer ${accessToken}`,
       },
     });
+  }
+
+  async getUser(){
+    return this.request("/api/accounts/auth/google/login")
   }
 
   async changePassword(
