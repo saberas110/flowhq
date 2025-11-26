@@ -3,8 +3,8 @@ version: "3.8"
 services:
   web:
     build:
-      context: .
-      dockerfile: apps/web/Dockerfile
+      context: ./apps/web
+      dockerfile: Dockerfile
     ports:
       - "${WEB_PORT:-6500}:6500"
     environment:
