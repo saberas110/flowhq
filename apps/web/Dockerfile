@@ -1,57 +1,34 @@
-# Use an official Node.js runtime as the base image for building
+# ---------- Builder ----------
 FROM node:20-alpine AS builder
 
-# Set working directory
 WORKDIR /app
 
 # Install pnpm globally
 RUN npm install -g pnpm
 
-# Copy root package files and workspace configuration
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
-
-# Copy shared packages
-COPY packages ./packages
-
-# Copy web app
+# Copy ONLY the web app files (because context = apps/web)
 COPY . .
 
-# Install dependencies
+# Install deps & build
 RUN pnpm install --frozen-lockfile
-
-# Build the web app
-WORKDIR /app/apps/web
-
 RUN pnpm build
 
-# Use a minimal Node.js runtime for the production image
+
+# ---------- Runner ----------
 FROM node:20-alpine AS runner
+
+WORKDIR /app
 
 # Install pnpm globally
 RUN npm install -g pnpm
 
-# Set working directory
-WORKDIR /app
+# Copy built files
+COPY --from=builder /app ./
 
-# Copy root package files
-COPY --from=builder /app/package.json /app/pnpm-lock.yaml /app/pnpm-workspace.yaml ./
-
-# Copy shared packages
-COPY --from=builder /app/packages ./packages
-
-# Copy web app
-COPY --from=builder /app/apps/web ./apps/web
-
-RUN pnpm install --frozen-lockfile
-
-# Set working directory to web app
-WORKDIR /app/apps/web
-
-# Set the environment variable to production
+# Set env
 ENV NODE_ENV=production
 
-# Expose the port the app runs on
 EXPOSE 6500
 
-# Start the Next.js application
+# Start Next.js
 CMD ["pnpm", "start"]
