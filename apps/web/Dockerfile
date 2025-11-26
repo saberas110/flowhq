@@ -14,7 +14,7 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY packages ./packages
 
 # Copy web app
-COPY apps/web ./apps/web
+COPY . .
 
 # Install dependencies
 RUN pnpm install --frozen-lockfile
