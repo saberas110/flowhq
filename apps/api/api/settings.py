@@ -157,8 +157,8 @@ SIMPLE_JWT = {
 
 
 CORS_ALLOW_CREDENTIAL = True
-CORS_ALLOW_ORIGIN = os.getenv("FRONT_URL", "").split(",")
-CSRF_TRUSTED_ORIGINS = os.getenv("FRONT_URL", "").split(",")
+CORS_ALLOW_ORIGIN = os.environ.get("FRONT_URL", "").split(",")
+CSRF_TRUSTED_ORIGINS = os.environ.get("FRONT_URL", "").split(",")
 CSRF_COOKIE_SAMESITE = None
 CSRF_COOKIE_HTTPONLY = True
 CSRF_COOKIE_SECURE = True
