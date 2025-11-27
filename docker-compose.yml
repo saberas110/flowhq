@@ -41,6 +41,9 @@ services:
       - ./apps/api/.env
     ports:
       - "8000:8000"
+      -
+    environment:
+      - DJANGO_SETTINGS_MODULE=api.settings
 
     networks:
       - default
