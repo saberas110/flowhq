@@ -4,6 +4,8 @@ FROM python:3.12-slim
 # Prevent Python from writing .pyc files & enable stdout logging
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
+ENV DJANGO_SETTINGS_MODULE=api.settings
+
 
 WORKDIR /app
 
