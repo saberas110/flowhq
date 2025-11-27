@@ -1,4 +1,4 @@
-from django.contrib.auth.models import AnonymousUser
+
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework_simplejwt.exceptions import ExpiredTokenError, TokenError, AuthenticationFailed, InvalidToken
 from rest_framework_simplejwt.tokens import AccessToken, RefreshToken
@@ -17,10 +17,14 @@ class AttachTokenMiddleware:
 
 
 class RefreshJWTMiddleware:
+
+
     def __init__(self, get_response):
         self.get_response = get_response
 
     def __call__(self, request):
+        from django.contrib.auth.models import AnonymousUser
+
         access = request.COOKIES.get('access')
         refresh = request.COOKIES.get('refresh')
 
