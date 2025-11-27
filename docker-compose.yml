@@ -39,7 +39,6 @@ services:
     container_name: django_app
     ports:
       - "8000:8000"
-      -
     environment:
       - DJANGO_SETTINGS_MODULE=api.settings
 
