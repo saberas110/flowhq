@@ -6,7 +6,7 @@ FROM node:20 AS builder
 WORKDIR /app
 
 # Copy root workspace info
-COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
+COPY pnpm-lock.yaml  package.json ./
 
 # Copy full monorepo
 COPY . .
