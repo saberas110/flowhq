@@ -11,6 +11,7 @@ COPY package.json  ./
 
 # Install deps & build
 RUN pnpm install
+
 RUN pnpm build
 
 
