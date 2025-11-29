@@ -82,6 +82,7 @@ ASGI_APPLICATION = 'api.asgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
+
 DATABASES = {
     "default": dj_database_url.config(
         default=os.environ.get("DB_URL"),
