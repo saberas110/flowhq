@@ -6,14 +6,11 @@ WORKDIR /app
 # Install pnpm globally
 RUN npm install -g pnpm
 
-
-COPY package.json ./
-
-RUN pnpm install
-
 # Copy ONLY the web app files (because context = apps/web)
-COPY . .
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 
+# Install deps & build
+RUN pnpm install --frozen-lockfile
 RUN pnpm build
 
 
