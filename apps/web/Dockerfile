@@ -7,7 +7,8 @@ WORKDIR /app
 RUN npm install -g pnpm
 
 
-COPY ../../package.json ../../pnpm-lock.yaml ./
+COPY ../../package.json ./
+COPY ../../pnpm-lock.yaml ./
 RUN pnpm install --frozen-lockfile
 
 # Copy ONLY the web app files (because context = apps/web)
