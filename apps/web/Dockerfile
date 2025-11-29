@@ -1,36 +1,37 @@
-# ---------- Builder ----------
-FROM node:20-alpine AS builder
+# -----------------------------
+# 1) Base image
+# -----------------------------
+FROM node:20 AS builder
 
 WORKDIR /app
 
-# Install pnpm globally
-RUN npm install -g pnpm
+# Copy root workspace info
+COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
 
-
-COPY package.json pnpm-lock.yaml ./
-RUN pnpm install --frozen-lockfile
-
-# Copy ONLY the web app files (because context = apps/web)
+# Copy full monorepo
 COPY . .
 
+# Install pnpm
+RUN npm install -g pnpm
+
+# Install deps for ONLY this project
+RUN pnpm install --filter="./apps/web"
+
+# Build the web app
+WORKDIR /app/apps/web
 RUN pnpm build
 
-
-# ---------- Runner ----------
-FROM node:20-alpine AS runner
+# -----------------------------
+# 2) Runtime image
+# -----------------------------
+FROM node:20 AS runner
 
 WORKDIR /app
 
-# Install pnpm globally
-RUN npm install -g pnpm
-
-# Copy built files
-COPY --from=builder /app ./
-
-# Set env
-ENV NODE_ENV=production
+COPY --from=builder /app/apps/web/.next .next
+COPY --from=builder /app/apps/web/public public
+COPY --from=builder /app/apps/web/package.json package.json
 
 EXPOSE 6500
 
-# Start Next.js
 CMD ["pnpm", "start"]
