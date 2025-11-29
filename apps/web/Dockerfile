@@ -12,6 +12,8 @@ COPY package.json  ./
 # Install deps & build
 RUN pnpm install
 
+COPY . .
+
 RUN pnpm build
 
 
@@ -28,6 +30,11 @@ COPY --from=builder /app ./
 
 # Set env
 ENV NODE_ENV=production
+
+
+COPY --from=builder /app/.next/standalone ./
+COPY --from=builder /app/.next/static ./.next/static
+COPY --from=builder /app/public ./public
 
 EXPOSE 6500
 
