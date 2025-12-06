@@ -10,11 +10,10 @@ RUN npm install -g pnpm
 COPY . .
 
 # Install deps & build
-RUN pnpm install
+RUN pnpm install --filter ./apps/web...
 
-
-
-RUN pnpm build
+# Build only the web app (with its workspace deps)
+RUN pnpm build --filter ./apps/web.
 
 
 # ---------- Runner ----------
