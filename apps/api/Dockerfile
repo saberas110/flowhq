@@ -37,6 +37,6 @@ ENV PATH="/app/.venv/bin:$PATH"
 EXPOSE 8000
 
 # Run migrations + Daphne server
-CMD ["bash", "-c", "python manage.py migrate && daphne -b 0.0.0.0 -p 8000 api.asgi:application"]
+CMD ["sh", "-c", "python manage.py migrate && daphne -b 0.0.0.0 -p 8000 api.asgi:application"]
 
 
