@@ -12,8 +12,8 @@ WORKDIR /app
 
 # Install system dependencies
 RUN apt-get update \
-     && apt-get install -y bash build-essential  --no-install-recommends curl ca-certificates curl libpq-dev \
-    && rm -rf /var/lib/apt/lists/*
+    && apt-get install -y bash build-essential curl ca-certificates libpq-dev \
+    && rm -rf /var/lib/apt/lists/
 
 COPY uv.lock pyproject.toml ./
 
@@ -21,19 +21,11 @@ COPY --from=ghcr.io/astral-sh/uv:0.8.17 /uv /uvx /usr/local/bin/
 
 RUN uv sync --locked --no-dev
 
-ENV PATH="app."
 
 COPY . .
 
 ENV PATH="/app/.venv/bin:$PATH"
-#COPY requirements.txt .
-#RUN pip install --no-cache-dir -r requirements.txt
 
-
-# Copy project files
-
-
-# Expose port for Daphne/ASGI
 EXPOSE 8000
 
 # Run migrations + Daphne server
