@@ -8,7 +8,8 @@ ENV DJANGO_SETTINGS_MODULE=api.settings
 
 COPY --from=ghcr.io/astral-sh/uv:0.8.17 /uv /uvx /usr/local/bin/
 
-ADD . /app
+COPY uv.lock pyproject.toml ./
+
 
 WORKDIR /app
 
@@ -19,6 +20,8 @@ RUN apt-get update \
 
 
 RUN uv sync --locked
+
+COPY . .
 
 
 
