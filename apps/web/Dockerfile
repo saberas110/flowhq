@@ -7,17 +7,14 @@ WORKDIR /app
 RUN npm install -g pnpm
 
 # Copy ONLY the web app files (because context = apps/web)
-COPY pnpm-lock.yaml ./
-COPY package.json ./
-COPY apps ./apps
-COPY packages ./packages
-
+COPY package.json  ./
 
 # Install deps & build
-RUN pnpm install --no-frozen-lockfile
+RUN pnpm install
 
-# Build only the web app (with its workspace deps)
-RUN pnpm --filter ./apps/web build
+COPY . .
+
+RUN pnpm build
 
 
 # ---------- Runner ----------
