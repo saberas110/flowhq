@@ -12,11 +12,12 @@ COPY package.json ./
 COPY apps ./apps
 COPY packages ./packages
 
+
 # Install deps & build
 RUN pnpm install --no-frozen-lockfile
 
 # Build only the web app (with its workspace deps)
-RUN pnpm build --filter ./apps/web.
+RUN pnpm --filter ./apps/web build
 
 
 # ---------- Runner ----------
