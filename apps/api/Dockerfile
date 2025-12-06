@@ -27,7 +27,7 @@ RUN uv sync --locked
 
 
 # Copy project files
-COPY . .
+
 
 # Expose port for Daphne/ASGI
 EXPOSE 8000
