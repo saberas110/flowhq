@@ -8,7 +8,8 @@
     ".": "./src/index.ts",
     "./types": "./src/types/index.ts",
     "./dtos": "./src/dtos/index.ts",
-    "./validators": "./src/validators/index.ts"
+    "./validators": "./src/validators/index.ts",
+    "./error": "./src/error/index.ts"
   },
   "scripts": {
     "lint": "eslint . --max-warnings 0",

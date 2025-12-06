@@ -3,11 +3,14 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-# Install pnpm globally
+
 RUN npm install -g pnpm
 
-# Copy ONLY the web app files (because context = apps/web)
-COPY . .
+
+COPY pnpm-workspace.yaml ./
+COPY package.json ./
+COPY packages ./packages
+COPY apps ./apps
 
 # Install deps & build
 RUN pnpm install
