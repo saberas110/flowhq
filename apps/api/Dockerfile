@@ -19,7 +19,7 @@ COPY uv.lock pyproject.toml ./
 
 COPY --from=ghcr.io/astral-sh/uv:0.8.17 /uv /uvx /usr/local/bin/
 
-RUN uv sync --locked --no-dev --system
+RUN uv sync --locked
 
 ENV PATH="app."
 
