@@ -19,7 +19,9 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 
 
-RUN uv sync --locked
+RUN uv sync --locked --no-dev --system
+
+ENV PATH="app."
 
 COPY . .
 
