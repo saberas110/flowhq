@@ -1,3 +1,59 @@
+export type TRegisterDto = {
+  email: string
+  first_name: string
+  last_name: string
+  password: string
+  confirm_password: string
+}
+
+export type TLoginDto = {
+  email: string
+  password: string
+}
+
+
+export type TRegisterResponse = {
+  email: string,
+  first_name: string,
+  last_name: string
+}
+
+export type TLogOutResponse = {
+  detail: string
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 export interface IRegisterDto {
   email: string;
   firstName: string;

@@ -7,7 +7,7 @@ import {
   getAllTags,
   updateArticle,
 } from '@/http/article.http'
-import type { ICreateArticleDto, IUpdateArticleDto } from '@repo/shared/dtos'
+import type { ICreateArticleDto, IUpdateArticleDto } from '@flowhq/shared'
 
 const QUERY_KEY = 'articles'
 const TAGS_QUERY_KEY = 'article-tags'

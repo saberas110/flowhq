@@ -1,4 +1,4 @@
-import type { IArticleResponseDto } from '@repo/shared/dtos'
+import type { IArticleResponseDto } from '@flowhq/shared'
 import type { Article } from './schema'
 
 /**

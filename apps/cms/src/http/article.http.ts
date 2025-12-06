@@ -5,7 +5,9 @@ import {
   IArticleResponseDto,
   ICreateArticleDto,
   IUpdateArticleDto,
-} from '@repo/shared/dtos'
+} from '@flowhq/shared'
+
+
 
 export async function getAllArticles(
   published?: boolean,

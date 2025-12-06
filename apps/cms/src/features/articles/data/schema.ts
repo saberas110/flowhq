@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import type { IArticleResponseDto } from '@repo/shared/dtos'
+import type { IArticleResponseDto } from '@flowhq/shared'
 
 /**
  * Frontend Article type extends the shared DTO

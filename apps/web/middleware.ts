@@ -1,60 +1,39 @@
-import {NextResponse} from "next/server";
-import type {NextRequest} from "next/server";
-
+import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
 
 export async function middleware(request: NextRequest) {
+  const DASHBOARD_URL = new URL("/dashboard", request.url);
+  const Login_Url = new URL("/login", request.url)
+  const cookie = request.headers.get("cookie");
 
+  try {
+    const res = await fetch(process.env["USER_STATUS_URL"], {
+      method: "GET",
+      credentials: "include",
+      headers: cookie ? { Cookie: cookie } : {},
+    });
+    if (res.status === 200) {
+      if (request.nextUrl.pathname.startsWith("/dashboard"))
+        return NextResponse.next();
+      else if (request.nextUrl.pathname.startsWith("/login"))
+        return NextResponse.redirect(DASHBOARD_URL);
+    }
+    if (res.status === 401)
+      {
+      if (request.nextUrl.pathname.startsWith("/dashboard"))
+        return NextResponse.redirect(Login_Url);
+      else if (request.nextUrl.pathname.startsWith("/login"))
+        return NextResponse.next();
+    }
+  } catch (error) {
+    if (error instanceof TypeError) {
+      console.log("error in cach middleware ", error);
+    }
+  }
 
-
-    const LOGIN_URL = "http://127.0.0.1:8000/api/accounts/auth/google/login";
-    const DASHBOARD_URL = new URL("/dashboard", request.url)
-    const cookie = request.headers.get("cookie");
-
-    try {
-        const res = await fetch(`http://127.0.0.1:8000/api/accounts/userstatus`, {
-            method: "GET",
-            credentials: "include",
-            headers: cookie ? {Cookie: cookie} : {}
-            ,
-        });
-        console.log('status  is :', res.status)
-
-        if (request.url.includes("/dashboard")) {
-            if (res.status === 401) {
-                return NextResponse.redirect(LOGIN_URL);
-            }
-            if (res.status === 200) {
-                return NextResponse.next()
-            }
-        }
-
-
-        if (request.url.includes("/login")) {
-              if (res.status === 401) {
-                return NextResponse.redirect(LOGIN_URL);
-            }
-            if (res.status === 200) {
-                return NextResponse.redirect(DASHBOARD_URL)
-            }
-
-        }
-
-
-        }catch(err)
-        {
-            if (err instanceof TypeError){
-                    return NextResponse.redirect(LOGIN_URL);
-            }
-
-        }
-
-
-
-
-
-    return NextResponse.next();
+  return NextResponse.next();
 }
 
 export const config = {
-    matcher: ["/dashboard/:path*", "/login"],
+  matcher: ["/dashboard/:path*", "/login"],
 };

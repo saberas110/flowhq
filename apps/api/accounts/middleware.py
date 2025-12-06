@@ -28,6 +28,10 @@ class RefreshJWTMiddleware:
         access = request.COOKIES.get('access')
         refresh = request.COOKIES.get('refresh')
 
+        print("request", request)
+        print("access token", access)
+        print("refresh token", refresh)
+
         user = AnonymousUser()
         new_access = None
         if access:

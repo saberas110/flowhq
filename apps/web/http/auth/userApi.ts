@@ -1,21 +1,25 @@
-//
-//
-// const AUTH_URL = 'http://localhost:8000/api/accounts/'
-//
-// const authApi = axios.create({
-//     baseURL: AUTH_URL,
-//     withCredentials: true,
-// })
-//
-// // CSRFInterceptor(authApi)
-// // RefreshInterceptors(authApi)
-//
-//
-// export async function statusUser(){
-//     try {
-//         const response = await authApi.get('userstatus')
-//     return response.data
-//     }catch (error){
-//         throw error
-//     }
-// }
+import {TLoginDto, TLogOutResponse, TRegisterDto, TRegisterResponse} from "@flowhq/shared";
+
+import { api } from "@/http/axiosConfig";
+
+export const registerUser = async (
+  data: TRegisterDto,
+): Promise<TRegisterResponse> => {
+  const res = await api.post("register", data);
+  return res.data
+};
+
+export const loginUser = async (
+  data: TLoginDto,
+): Promise<TRegisterResponse> => {
+  const res = await api.post("login", data);
+  return res.data
+};
+
+
+
+
+export const logOutUser = async ():Promise<TLogOutResponse>=>{
+  const res = await api.get("logout")
+  return res.data
+}

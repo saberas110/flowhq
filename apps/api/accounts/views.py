@@ -4,14 +4,19 @@ import requests
 from django.conf import settings
 from django.shortcuts import redirect
 from django.http import JsonResponse
+from django.utils.decorators import method_decorator
 from django.views import View
 from authlib.jose import jwt, JsonWebKey
+from django.views.decorators.csrf import ensure_csrf_cookie
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
-from django.contrib.auth import get_user_model
+from django.contrib.auth import get_user_model, logout
+
+from accounts.authenticationmodule import HandleToken
+from accounts.serializers import UserRegisterSerializer, UserLoginSerializer
 
 User = get_user_model()
 
@@ -96,39 +101,64 @@ class GoogleCallBack(View):
 
 
         user, created = User.objects.get_or_create(email=email)
-
-
-        refresh = RefreshToken.for_user(user)
-        access_token = refresh.access_token
-        refresh_str = str(refresh)
-        access_str = str(access_token)
-
-
         response = redirect(settings.FRONTEND_LOGIN_SUCCESS_URL if hasattr(settings, "FRONTEND_LOGIN_SUCCESS_URL") else "/")
-        response.set_cookie(
-            key="access",
-            value=access_str,
-            httponly=True,
-            secure=not settings.DEBUG,
-            samesite='lax',
-        )
-        response.set_cookie(
-            key="refresh",
-            value=refresh_str,
-            httponly=True,
-            secure=not settings.DEBUG,
-            samesite='lax',
-        )
+        handle_token = HandleToken(user, response)
+
 
         try:
             del request.session["oauth_state"]
         except KeyError:
             pass
 
+        return handle_token.set_token_in_response()
+
+
+class RegisterUser(APIView):
+    def post(self, request):
+        srz_data = UserRegisterSerializer(data=request.data)
+        print('its srz_data', request.data)
+        if srz_data.is_valid():
+            user = srz_data.create(srz_data.validated_data)
+            response = Response(srz_data.data, status=status.HTTP_201_CREATED)
+            handle_token = HandleToken(user, response)
+            return handle_token.set_token_in_response()
+
+        return Response(srz_data.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class LogoutUser(APIView):
+    permission_classes = [IsAuthenticated]
+    def get(self, request):
+        response = Response({"detail": "Logged out"})
+        response.delete_cookie("access")
+        response.delete_cookie("refresh")
         return response
+
+
+class LoginUser(APIView):
+    def post(self, request):
+        srz_data = UserLoginSerializer(data=request.data)
+
+
+        print('request.data', srz_data)
+        if srz_data.is_valid(raise_exception=True):
+            user = srz_data.validated_data
+            print('user in view', user)
+            response = Response(srz_data.data, status=status.HTTP_200_OK)
+            handle_token = HandleToken(user, response)
+            return handle_token.set_token_in_response()
+        return Response(srz_data.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 
 class UserStatus(APIView):
     permission_classes = [IsAuthenticated,]
     def get(self, request):
         return Response({'UserStatus': 'Authenticated'}, status=status.HTTP_200_OK)
+
+
+
+class CSRFTokenView(APIView):
+    @method_decorator(ensure_csrf_cookie)
+    def get(self, request):
+        return Response({'message':'CSRFToken set successfully'})

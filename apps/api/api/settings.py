@@ -16,13 +16,14 @@ from dotenv import load_dotenv
 import dj_database_url
 
 
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 load_dotenv(BASE_DIR / ".env")
-load_dotenv(BASE_DIR / ".env")
+
 SECRET_KEY = os.environ.get("SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
@@ -48,6 +49,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -146,7 +148,9 @@ AUTH_USER_MODEL = 'accounts.User'
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
         'rest_framework_simplejwt.authentication.JWTAuthentication',
-    ]
+    ],
+
+    "EXCEPTION_HANDLER": 'utils.handler.custom_exception_handler',
 }
 
 SIMPLE_JWT = {
@@ -157,21 +161,36 @@ SIMPLE_JWT = {
 }
 
 
-CORS_ALLOW_CREDENTIAL = True
-CORS_ALLOW_ORIGIN = os.environ.get("FRONT_URL", "").split(",")
-CSRF_TRUSTED_ORIGINS = os.environ.get("FRONT_URL", "").split(",")
-CSRF_COOKIE_SAMESITE = None
-CSRF_COOKIE_HTTPONLY = True
-CSRF_COOKIE_SECURE = True
+CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS").split(",")
+CSRF_TRUSTED_ORIGINS = os.getenv("ALLOWED_ORIGINS").split(",")
+CSRF_COOKIE_SAMESITE = "None"
+CSRF_COOKIE_HTTPONLY = False
+CSRF_COOKIE_SECURE = False
 
 GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID")
 GOOGLE_CLIENT_SECRET = os.environ.get("GOOGLE_CLIENT_SECRET")
 GOOGLE_REDIRECT_URI = os.environ.get("GOOGLE_REDIRECT_URI")
 
 SESSION_COOKIE_SECURE = False
-SESSION_COOKIE_SAMESITE = None
+SESSION_COOKIE_SAMESITE = "lax"
 SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_PATH = "/"
 SESSION_ENGINE = "django.contrib.sessions.backends.db"
 
+CORS_ALLOW_HEADERS = [
+    'accept',
+    'accept-encoding',
+    'authorization',
+    'content-type',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
+]
+
+
+
 FRONTEND_LOGIN_SUCCESS_URL = os.environ.get("FRONTEND_LOGIN_SUCCESS_URL")
+

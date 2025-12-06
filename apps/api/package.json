@@ -1,9 +1,6 @@
 {
-"name":"chat_manager",
-"scripts":{
-"dev": "bash -c 'python manage.py migrate && daphne -b 0.0.0 -p 8000 api.asgi:application",
-"build":""
-}
-
-
+    "name": "chat_manager",
+    "scripts": {
+        "build": ""
+    }
 }

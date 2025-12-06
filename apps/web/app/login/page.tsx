@@ -7,15 +7,17 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import Logo from '@/components/layout/Logo';
+import UserLoginForm from "@/components/auth/userLoginForm";
 
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const google_login_url = process.env
   const [formData, setFormData] = useState({
     email: '',
     password: '',
   });
-
+  
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -43,55 +45,7 @@ export default function LoginPage() {
             </CardDescription>
           </div>
         </CardHeader>
-        <form onSubmit={handleSubmit}>
-          <CardContent className="space-y-4">
-            {error && (
-              <div className="p-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded-md">
-              </div>
-            )}
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                name="email"
-                type="email"
-                placeholder="you@example.com"
-                value={formData.email}
-                onChange={handleChange}
-                required
-                disabled={isLoading}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                name="password"
-                type="password"
-                placeholder="Enter your password"
-                value={formData.password}
-                onChange={handleChange}
-                required
-                disabled={isLoading}
-              />
-            </div>
-          </CardContent>
-          <CardFooter className="flex flex-col space-y-4">
-            <Button
-              type="submit"
-              className="w-full"
-              disabled={isLoading}
-            >
-              {isLoading ? 'Signing in...' : 'Sign in'}
-            </Button>
-            <p className="text-sm text-center text-gray-600">
-              Don&apos;t have an account?{' '}
-              <Link href="/register" className="text-blue-600 hover:underline font-medium">
-                Create one
-              </Link>
-            </p>
-          </CardFooter>
-        </form>
+        <UserLoginForm />
       </Card>
     </div>
   );

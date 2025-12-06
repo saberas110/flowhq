@@ -17,10 +17,15 @@ import {
   Trash2,
   Plus,
   ExternalLink,
+    LogOut
 } from "lucide-react";
+import {logOutUser} from "@/http/auth/userApi";
+import {useRouter} from "next/navigation";
+import {error} from "next/dist/build/output/log";
 
 const Settings: React.FC = () => {
   const [activeTab, setActiveTab] = useState("profile");
+  const router = useRouter()
 
   const tabs = [
     { id: "profile", name: "Profile", icon: User },
@@ -29,7 +34,20 @@ const Settings: React.FC = () => {
     { id: "channels", name: "Channels", icon: MessageSquare },
     { id: "security", name: "Security", icon: Shield },
     { id: "billing", name: "Billing", icon: CreditCard },
+
+
   ];
+
+  const handleLogOut = async ()=>{
+    await logOutUser().then(res=>{
+      console.log('its logout res:', res)
+      router.push("/login")
+    }).catch(error=>{
+      console.log('error while logout user', error())
+    })
+  }
+  
+  
 
   return (
     <div className="mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -49,7 +67,7 @@ const Settings: React.FC = () => {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`w-full flex items-center px-3 py-3 text-sm font-medium rounded-lg transition-colors ${
+                className={`w-full flex items-center cursor-pointer px-3 py-3 text-sm font-medium rounded-lg transition-colors ${
                   activeTab === tab.id
                     ? "bg-blue-50 text-blue-700 border border-blue-200"
                     : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
@@ -59,6 +77,16 @@ const Settings: React.FC = () => {
                 {tab.name}
               </button>
             ))}
+
+            <button
+              onClick={handleLogOut}
+              className="w-full flex items-center cursor-pointer px-3 py-3 text-sm font-medium rounded-lg transition-colors text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+
+            >
+              <LogOut className="h-5 w-5 mr-3" />
+              LogOut
+
+            </button>
           </nav>
         </div>
 

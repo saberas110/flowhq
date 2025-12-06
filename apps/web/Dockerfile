@@ -34,6 +34,7 @@ ENV NODE_ENV=production
 
 
 
+
 EXPOSE 6500
 
 # Start Next.js

@@ -15,7 +15,7 @@
     "saber": "cd /home"
   },
   "dependencies": {
-    "@repo/shared": "workspace:*",
+    "@flowhq/shared": "workspace:*",
     "@clerk/clerk-react": "^5.42.1",
     "@hookform/resolvers": "^5.2.1",
     "@radix-ui/react-alert-dialog": "^1.1.15",
