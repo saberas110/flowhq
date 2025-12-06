@@ -17,6 +17,9 @@ RUN apt-get update \
 COPY --from=ghcr.io/astral-sh/uv:0.8.17 /uv /uvx /usr/local/bin/
 
 ADD https://astral.sh/uv/install.sh /uv-installer.sh
+COPY pyproject.toml .
+COPY uv.lock .
+
 RUN sh /uv-installer.sh && rm /uv-installer.sh
 
 RUN uv sync --locked
