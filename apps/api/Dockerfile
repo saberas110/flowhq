@@ -15,15 +15,16 @@ RUN apt-get update && apt-get install -y \
     libpq-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Python dependencies
-RUN ls && pwd
-RUN ls && pwd
-RUN ls && pwd
 
-COPY requirements.txt .
+ADD https://astral.sh/uv/install.sh /uv-installer.sh
+RUN sh /uv-installer.sh && rm /uv-installer.sh
+
+RUN uv sync --locked
 
 
-RUN pip install --no-cache-dir -r requirements.txt
+
+#COPY requirements.txt .
+#RUN pip install --no-cache-dir -r requirements.txt
 
 
 # Copy project files
