@@ -10,11 +10,11 @@ ENV DJANGO_SETTINGS_MODULE=api.settings
 WORKDIR /app
 
 # Install system dependencies
-RUN apt-get update && apt-get install -y \
-    build-essential \
-    libpq-dev \ --no-install-recommends curl ca-certificates \
+RUN apt-get update \
+     && apt-get install -y build-essential  --no-install-recommends curl ca-certificates curl libpq-dev \
     && rm -rf /var/lib/apt/lists/*
 
+COPY --from=ghcr.io/astral-sh/uv:0.8.17 /uv /uvx /usr/local/bin/
 
 ADD https://astral.sh/uv/install.sh /uv-installer.sh
 RUN sh /uv-installer.sh && rm /uv-installer.sh
