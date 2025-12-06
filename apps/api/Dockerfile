@@ -6,9 +6,6 @@ ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 ENV DJANGO_SETTINGS_MODULE=api.settings
 
-COPY --from=ghcr.io/astral-sh/uv:0.8.17 /uv /uvx /usr/local/bin/
-
-COPY uv.lock pyproject.toml ./
 
 
 WORKDIR /app
@@ -18,6 +15,9 @@ RUN apt-get update \
      && apt-get install -y build-essential  --no-install-recommends curl ca-certificates curl libpq-dev \
     && rm -rf /var/lib/apt/lists/*
 
+COPY uv.lock pyproject.toml ./
+
+COPY --from=ghcr.io/astral-sh/uv:0.8.17 /uv /uvx /usr/local/bin/
 
 RUN uv sync --locked --no-dev --system
 
