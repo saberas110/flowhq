@@ -7,7 +7,7 @@ export async function middleware(request: NextRequest) {
   const cookie = request.headers.get("cookie");
 
   try {
-    const res = await fetch(process.env["USER_STATUS_URL"], {
+    const res = await fetch(process.env["USER_STATUS_URL"]!, {
       method: "GET",
       credentials: "include",
       headers: cookie ? { Cookie: cookie } : {},
@@ -27,7 +27,7 @@ export async function middleware(request: NextRequest) {
     }
   } catch (error) {
     if (error instanceof TypeError) {
-      console.log("error in cach middleware ", error);
+      console.log("error in catch middleware ", error);
     }
   }
 
