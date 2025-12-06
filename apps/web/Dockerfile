@@ -7,12 +7,12 @@ WORKDIR /app
 RUN npm install -g pnpm
 
 # Copy ONLY the web app files (because context = apps/web)
-COPY package.json  ./
+COPY . .
 
 # Install deps & build
 RUN pnpm install
 
-COPY . .
+
 
 RUN pnpm build
 
