@@ -12,7 +12,7 @@ WORKDIR /app
 
 # Install system dependencies
 RUN apt-get update \
-     && apt-get install -y build-essential  --no-install-recommends curl ca-certificates curl libpq-dev \
+     && apt-get install -y bash build-essential  --no-install-recommends curl ca-certificates curl libpq-dev \
     && rm -rf /var/lib/apt/lists/*
 
 COPY uv.lock pyproject.toml ./
@@ -37,6 +37,6 @@ ENV PATH="/app/.venv/bin:$PATH"
 EXPOSE 8000
 
 # Run migrations + Daphne server
-CMD ["sh", "-c", "python manage.py migrate && daphne -b 0.0.0.0 -p 8000 api.asgi:application"]
+CMD ["bash", "-c", "python manage.py migrate && daphne -b 0.0.0.0 -p 8000 api.asgi:application"]
 
 
