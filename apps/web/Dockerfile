@@ -7,10 +7,12 @@ WORKDIR /app
 RUN npm install -g pnpm
 
 
-ADD pnpm-workspace.yaml .
-ADD package.json .
-ADD packages ./packages
-ADD apps ./apps
+RUN ls
+
+COPY pnpm-workspace.yaml ./
+COPY package.json ./
+COPY packages ./packages
+COPY apps ./apps
 
 # Install deps & build
 RUN pnpm install
