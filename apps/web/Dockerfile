@@ -9,7 +9,7 @@ WORKDIR /app
 
 
 
-COPY .. /app
+COPY ../ /app
 
 
 RUN ls -la /app
