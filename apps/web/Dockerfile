@@ -2,15 +2,14 @@
 FROM node:20-alpine AS builder
 
 WORKDIR /app
-RUN ls
-RUN ls
+
 
 RUN npm install -g pnpm
 
 
-RUN ls
 
-#COPY pnpm-workspace.yaml ./
+
+COPY pnpm-workspace.yaml ./
 #COPY package.json ./
 #COPY packages ./packages
 #COPY apps ./apps
