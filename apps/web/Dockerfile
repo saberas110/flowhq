@@ -7,8 +7,15 @@ RUN ls -la
 
 
 
+RUN ls -la .
 
-RUN ls -la ../
+
+RUN ls -la /app
+
+
+
+
+RUN ls -la /
 
 
 RUN npm install -g pnpm
