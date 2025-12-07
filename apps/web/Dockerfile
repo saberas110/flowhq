@@ -11,7 +11,7 @@ RUN npm install -g pnpm
 COPY pnpm-workspace.yaml ./
 COPY package.json ./
 COPY packages ./packages
-COPY apps ./apps
+COPY apps/web ./apps/web
 
 
 
