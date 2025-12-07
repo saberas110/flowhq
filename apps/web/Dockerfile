@@ -4,34 +4,18 @@ FROM node:20-alpine AS builder
 WORKDIR /app
 
 
-
-
-
-
-
-COPY . .
-
-
-RUN ls -la .
-
-
-
-
-RUN ls -la /app
-
-
 RUN npm install -g pnpm
 
 
 
+COPY pnpm-workspace.yaml ./
+COPY package.json ./
+COPY packages ./packages
+COPY apps/web ./apps/web
 
-#COPY pnpm-workspace.yaml ./
 
-#COPY package.json ./
-##COPY packages ./packages
-##COPY apps ./apps
 
-# Install deps & build
+
 RUN pnpm install
 
 
