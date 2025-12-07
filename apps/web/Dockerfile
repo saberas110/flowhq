@@ -5,6 +5,10 @@ WORKDIR /app
 
 RUN ls -la
 
+COPY . .
+
+RUN ls -la
+
 
 RUN npm install -g pnpm
 
