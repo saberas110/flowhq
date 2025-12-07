@@ -12,7 +12,7 @@ WORKDIR /app
 COPY . .
 
 
-RUN ls -la /app../..
+RUN ls -la .
 
 
 
