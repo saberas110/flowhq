@@ -5,7 +5,7 @@ WORKDIR /app
 
 RUN ls -la ../
 
-COPY ../
+
 
 
 RUN ls -la ../
