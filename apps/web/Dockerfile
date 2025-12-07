@@ -7,8 +7,8 @@ WORKDIR /app
 RUN npm install -g pnpm
 
 
-ADD pnpm-workspace.yaml ./
-ADD package.json ./
+ADD pnpm-workspace.yaml .
+ADD package.json .
 ADD packages ./packages
 ADD apps ./apps
 
