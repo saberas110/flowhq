@@ -8,9 +8,9 @@ RUN npm install -g pnpm
 
 
 ADD pnpm-workspace.yaml ./
-COPY package.json ./
-COPY packages ./packages
-COPY apps ./apps
+ADD package.json ./
+ADD packages ./packages
+ADD apps ./apps
 
 # Install deps & build
 RUN pnpm install
