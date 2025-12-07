@@ -17,12 +17,11 @@ RUN ls -la .
 
 
 
-RUN ls -la /
+RUN ls -la /app
 
 
 RUN npm install -g pnpm
 
-RUN ls R
 
 
 
