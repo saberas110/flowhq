@@ -8,7 +8,7 @@ RUN ls -la
 
 RUN npm install -g pnpm
 
-RUN ls -la
+RUN ls R
 
 
 
