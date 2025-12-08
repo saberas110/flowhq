@@ -5,6 +5,7 @@ import { api } from "@/http/axiosConfig";
 export const registerUser = async (
   data: TRegisterDto,
 ): Promise<TRegisterResponse> => {
+  console.log('start axios')
   const res = await api.post("register", data);
   return res.data
 };
