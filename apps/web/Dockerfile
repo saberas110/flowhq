@@ -24,20 +24,15 @@ FROM node:20-alpine AS runner
 
 WORKDIR /app
 
-# Install pnpm globally
+
 RUN npm install -g pnpm
 
-# Copy built files
+
 COPY --from=builder /app ./
 
-# Set env
+
 ENV NODE_ENV=production
-
-
-
-
 
 EXPOSE 6500
 
-# Start Next.js
 CMD ["pnpm", "start"]
