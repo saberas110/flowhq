@@ -29,7 +29,7 @@ SECRET_KEY = os.environ.get("SECRET_KEY")
 
 DEBUG = True
 
-ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS")
+ALLOWED_HOSTS = [os.getenv("ALLOWED_HOSTS")]
 
 
 print('ALLOWED_HOSTS', os.getenv("ALLOWED_HOSTS").split(","))
