@@ -30,14 +30,14 @@ class HandleToken:
             value=access,
             httponly=True,
             secure=os.getenv("SECURE"),
-            samesite='lax',
+            samesite=os.getenv("SAMESITE"),
         )
         self.response.set_cookie(
             key="refresh",
             value=refresh,
             httponly=True,
             secure=os.getenv("SECURE"),
-            samesite= "lax",
+            samesite=os.getenv("SAMESITE"),
         )
         print('self.response', self.response)
         return self.response
