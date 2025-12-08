@@ -21,6 +21,7 @@ class HandleToken:
         # self.response.delete_cookie("refresh")
 
         print("secure",os.getenv("SECURE") )
+        print("samesite",os.getenv("SAMESITE") )
 
         refresh, access = self.create_token()
         print(refresh)
