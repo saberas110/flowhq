@@ -30,6 +30,7 @@ class HandleToken:
             httponly=True,
             secure=os.getenv("SECURE"),
             samesite='lax',
+            domain=os.getenv("ALLOWED_ORIGINS")
         )
         self.response.set_cookie(
             key="refresh",
@@ -37,6 +38,7 @@ class HandleToken:
             httponly=True,
             secure=os.getenv("SECURE"),
             samesite= "lax",
+            domain=os.getenv("ALLOWED_ORIGINS")
         )
         print('self.response')
         return self.response
