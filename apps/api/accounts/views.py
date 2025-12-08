@@ -15,8 +15,9 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import get_user_model, logout
 
-from accounts.authenticationmodule import HandleToken
-from accounts.serializers import UserRegisterSerializer, UserLoginSerializer
+from .authenticationmodule import HandleToken
+from .serializers import UserRegisterSerializer
+from .serializers import UserLoginSerializer
 
 User = get_user_model()
 
