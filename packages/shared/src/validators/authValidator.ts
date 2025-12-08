@@ -19,6 +19,9 @@ export type TRegisterFormValues = z.infer<typeof registerFormSchema>;
 export const registerresolver= zodResolver(registerFormSchema)
 
 
+
+
+
 export const loginFormSchema = z.object({
     email: z.string().email().min(1),
     password: z.string().min(7)
