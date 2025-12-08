@@ -25,6 +25,15 @@ class RefreshJWTMiddleware:
     def __call__(self, request):
         from django.contrib.auth.models import AnonymousUser
 
+        public_urls = [
+            '/api/accounts/register',
+            '/api/accounts/login',
+            '/api/token/',
+        ]
+
+        if request.path in public_urls:
+            return  self.get_response(request)
+
         access = request.COOKIES.get('access')
         refresh = request.COOKIES.get('refresh')
 
