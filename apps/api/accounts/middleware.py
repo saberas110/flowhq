@@ -34,8 +34,8 @@ class RefreshJWTMiddleware:
 
         if request.path in public_urls:
             response = self.get_response(request)
-            response.delete_cookie("access")
-            response.delete_cookie("refresh")
+            # response.delete_cookie("access")
+            # response.delete_cookie("refresh")
             return response
 
         access = request.COOKIES.get('access')

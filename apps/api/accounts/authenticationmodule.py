@@ -20,6 +20,7 @@ class HandleToken:
         # self.response.delete_cookie("access")
         # self.response.delete_cookie("refresh")
 
+        print("secure",os.getenv("SECURE") )
 
         refresh, access = self.create_token()
         print(refresh)
