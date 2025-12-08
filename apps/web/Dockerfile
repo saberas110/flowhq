@@ -22,7 +22,7 @@ RUN pnpm build
 # ---------- Runner ----------
 FROM node:20-alpine AS runner
 
-WORKDIR /app
+WORKDIR /app/apps/web
 
 
 RUN npm install -g pnpm
