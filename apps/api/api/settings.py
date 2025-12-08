@@ -163,7 +163,6 @@ SIMPLE_JWT = {
     "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
     'SIGNING_KEY': SECRET_KEY,
     'ALGORITHM': 'HS256',
-    "JWT_URL":os.getenv("ALLOWED_ORIGINS")
 }
 
 

@@ -118,7 +118,7 @@ class RegisterUser(APIView):
     def post(self, request):
         srz_data = UserRegisterSerializer(data=request.data)
         print('its srz_data', request.data)
-        if srz_data.is_valid(raise_exception=True):
+        if srz_data.is_valid():
             user = srz_data.create(srz_data.validated_data)
             response = Response(srz_data.data, status=status.HTTP_201_CREATED)
             handle_token = HandleToken(user, response)
@@ -142,7 +142,7 @@ class LoginUser(APIView):
 
 
         print('request.data', srz_data)
-        if srz_data.is_valid(raise_exception=True):
+        if srz_data.is_valid():
             user = srz_data.validated_data
             print('user in view', user)
             response = Response(srz_data.data, status=status.HTTP_200_OK)
