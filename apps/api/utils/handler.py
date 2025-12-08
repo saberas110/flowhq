@@ -22,7 +22,7 @@ def custom_exception_handler(exc, context):
         if exception_class == "ValidationError":
             message = response.data["message"][0].split("=")[0]
             return handler[exception_class](exc, context, response, message)
-        return handler[exception_class](exc, context, response)
+        return handler[exception_class](exc, context, response, None)
 
     return response
 
