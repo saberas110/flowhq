@@ -22,7 +22,7 @@ RUN pnpm build
 # ---------- Runner ----------
 FROM node:20-alpine AS runner
 
-WORKDIR /app/apps/web
+WORKDIR /app
 
 
 RUN npm install -g pnpm
@@ -35,4 +35,4 @@ ENV NODE_ENV=production
 
 EXPOSE 6500
 
-CMD ["pnpm", "start"]
+CMD ["pnpm", "dev"]
