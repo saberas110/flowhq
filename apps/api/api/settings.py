@@ -34,6 +34,8 @@ ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS").split(",")
 
 print('ALLOWED_HOSTS', os.getenv("ALLOWED_HOSTS").split(","))
 
+print('ALLOWED_HOSTS in setting', ALLOWED_HOSTS)
+
 
 
 INSTALLED_APPS = [
