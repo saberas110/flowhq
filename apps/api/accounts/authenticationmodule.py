@@ -1,3 +1,5 @@
+import os
+
 from django.conf import settings
 
 
@@ -26,14 +28,14 @@ class HandleToken:
             key="access",
             value=access,
             httponly=True,
-            secure=not settings.DEBUG,
+            secure=os.getenv("SECURE"),
             samesite='lax',
         )
         self.response.set_cookie(
             key="refresh",
             value=refresh,
             httponly=True,
-            secure=not settings.DEBUG,
+            secure=os.getenv("SECURE"),
             samesite= "lax",
         )
         print('self.response')
