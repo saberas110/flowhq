@@ -1,12 +1,10 @@
 from rest_framework.views import exception_handler
 
-
-
 def custom_exception_handler(exc, context):
     print("context", context)
 
     response = exception_handler(exc, context)
-    message = response.data["message"][0].split("=")[0]
+
     handler = {
         "ValidationError": handle_generic_error,
         "Http404": handle_generic_error,
@@ -19,13 +17,17 @@ def custom_exception_handler(exc, context):
 
     exception_class = exc.__class__.__name__
 
+
     if exception_class in handler:
-        return handler[exception_class](exc, context, response, message)
+        if exception_class == "ValidationError":
+            message = response.data["message"][0].split("=")[0]
+            return handler[exception_class](exc, context, response, message)
+        return handler[exception_class](exc, context, response)
 
     return response
 
 
-def handle_generic_error(exc, context, response, message):
+def handle_generic_error(exc, context, response, message=None):
 
     response.data = {
         "message": message,
