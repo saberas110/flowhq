@@ -38,7 +38,7 @@ class HandleToken:
             secure=os.getenv("SECURE"),
             samesite= "lax",
         )
-        print('self.response')
+        print('self.response', self.response)
         return self.response
 
 
