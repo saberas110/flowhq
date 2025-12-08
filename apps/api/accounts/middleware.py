@@ -30,9 +30,13 @@ class RefreshJWTMiddleware:
             '/api/accounts/login',
             '/api/token/',
         ]
+        print('request.path', request.path)
 
         if request.path in public_urls:
-            return  self.get_response(request)
+            response = self.get_response(request)
+            response.delete_cookie("access")
+            response.delete_cookie("refresh")
+            return response
 
         access = request.COOKIES.get('access')
         refresh = request.COOKIES.get('refresh')
