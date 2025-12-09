@@ -25,25 +25,10 @@ class RefreshJWTMiddleware:
     def __call__(self, request):
         from django.contrib.auth.models import AnonymousUser
 
-        public_urls = [
-            '/api/accounts/register',
-            '/api/accounts/login',
-            '/api/token/',
-        ]
-        print('request.path', request.path)
-
-        if request.path in public_urls:
-            response = self.get_response(request)
-            # response.delete_cookie("access")
-            # response.delete_cookie("refresh")
-            return response
 
         access = request.COOKIES.get('access')
         refresh = request.COOKIES.get('refresh')
 
-        print("request", request)
-        print("access token", access)
-        print("refresh token", refresh)
 
         user = AnonymousUser()
         new_access = None
@@ -66,12 +51,11 @@ class RefreshJWTMiddleware:
                     except Exception as e:
                         print('token error e :', e)
                         pass
-            except AuthenticationFailed:
-                print('authentication field')
-                pass
-            except (TokenError, InvalidToken):
-                print('token error , invalid token')
-                pass
+            except Exception as e:
+                request.user = user
+                return self.delete_cookie(request)
+
+
 
         request.user = user
         print('user in middleware', user)
@@ -84,4 +68,12 @@ class RefreshJWTMiddleware:
                 secure=False,
                 samesite='lax',
             )
+
+        return response
+
+
+    def delete_cookie(self, request):
+        response = self.get_response(request)
+        response.delete_cookie("access")
+        response.delete_cookie("refresh")
         return response
