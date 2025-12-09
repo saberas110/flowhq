@@ -19,8 +19,6 @@ class HandleToken:
     def set_token_in_response(self):
 
         cookie_setting = {
-            'lax': 'lax',
-            'None': None,
             'False': False,
             'True': True,
         }
@@ -32,14 +30,14 @@ class HandleToken:
             value=access,
             httponly=True,
             secure=cookie_setting[os.getenv("SECURE")],
-            samesite=cookie_setting[os.getenv("SAMESITE")],
+            samesite=os.getenv("SAMESITE"),
         )
         self.response.set_cookie(
             key="refresh",
             value=refresh,
             httponly=True,
             secure= cookie_setting[os.getenv("SECURE")] ,
-            samesite=cookie_setting[os.getenv("SAMESITE")],
+            samesite=os.getenv("SAMESITE"),
         )
         print('self.response', self.response)
         return self.response
