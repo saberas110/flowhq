@@ -1,3 +1,4 @@
+import os
 import urllib.parse
 import secrets
 import requests
@@ -23,13 +24,13 @@ User = get_user_model()
 
 class GoogleLogin(View):
     def get(self, request):
-        print('request.url', request)
+        print("redirect_uri", os.environ.get("GOOGLE_REDIRECT_URI"))
         state = secrets.token_urlsafe(32)
         request.session["oauth_state"] = state
 
         params = {
-            "client_id": settings.GOOGLE_CLIENT_ID,
-            "redirect_uri": settings.GOOGLE_REDIRECT_URI,
+            "client_id": os.environ.get("GOOGLE_CLIENT_ID"),
+            "redirect_uri": os.environ.get("GOOGLE_REDIRECT_URI"),
             "response_type": "code",
             "scope": "openid email profile",
             "state": state,
@@ -37,20 +38,15 @@ class GoogleLogin(View):
             "prompt": "consent",
         }
         url = "https://accounts.google.com/o/oauth2/v2/auth?" + urllib.parse.urlencode(params)
-        print('redirect_url', url)
-
         return redirect(url)
 
 
 class GoogleCallBack(View):
     def get(self, request):
-        print('from callback')
         state = request.GET.get('state')
-        print('call state is  :', state)
-
 
         saved_state = request.session.get("oauth_state")
-        print('save_state')
+
         if not saved_state:
             print("No saved state in session (session might be missing)")
         if state != saved_state:
@@ -64,9 +60,9 @@ class GoogleCallBack(View):
         token_url = "https://oauth2.googleapis.com/token"
         data = {
             "code": code,
-            "client_id": settings.GOOGLE_CLIENT_ID,
-            "client_secret": settings.GOOGLE_CLIENT_SECRET,
-            "redirect_uri": settings.GOOGLE_REDIRECT_URI,  # **اسم صحیح پارامتر**
+            "client_id": os.environ.get("GOOGLE_CLIENT_ID"),
+            "client_secret": os.environ.get("GOOGLE_CLIENT_SECRET"),
+            "redirect_uri": os.environ.get("GOOGLE_REDIRECT_URI"),
             "grant_type": "authorization_code",
         }
         token_res = requests.post(token_url, data=data, timeout=10)
@@ -102,9 +98,9 @@ class GoogleCallBack(View):
 
 
         user, created = User.objects.get_or_create(email=email)
-        response = redirect(settings.FRONTEND_LOGIN_SUCCESS_URL if hasattr(settings, "FRONTEND_LOGIN_SUCCESS_URL") else "/")
+        response = redirect(settings.FRONTEND_LOGIN_SUCCESS_URL if
+                            hasattr(settings, "FRONTEND_LOGIN_SUCCESS_URL") else "/")
         handle_token = HandleToken(user, response)
-
 
         try:
             del request.session["oauth_state"]
@@ -142,7 +138,7 @@ class LoginUser(APIView):
 
 
         print('request.data', srz_data)
-        if srz_data.is_valid():
+        if srz_data.is_valid(raise_exception=True):
             user = srz_data.validated_data
             print('user in view', user)
             response = Response(srz_data.data, status=status.HTTP_200_OK)

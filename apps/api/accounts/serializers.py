@@ -47,7 +47,7 @@ class UserLoginSerializer(serializers.ModelSerializer):
         try:
             user = User.objects.get(email=attrs["email"])
             if not user.check_password(attrs["password"]):
-                raise serializers.ValidationError({"message":"password is wrong"})
+                raise serializers.ValidationError("password is wrong")
             return user
         except User.DoesNotExist:
-            raise serializers.ValidationError({"message":"User does not exist"})
+            raise serializers.ValidationError("User does not exist")

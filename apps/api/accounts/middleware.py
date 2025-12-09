@@ -1,3 +1,4 @@
+import os
 
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework_simplejwt.exceptions import ExpiredTokenError, TokenError, AuthenticationFailed, InvalidToken
@@ -65,8 +66,9 @@ class RefreshJWTMiddleware:
                 key= "access",
                 value= new_access,
                 httponly=True,
-                secure=False,
-                samesite='lax',
+                secure=os.getenv("SECURE") == "True",
+                samesite=os.getenv("SAMESITE", "Lax"),
+                domain=os.getenv("COOKIE_DOMAIN", None)
             )
 
         return response

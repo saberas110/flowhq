@@ -155,7 +155,7 @@ REST_FRAMEWORK = {
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ],
 
-    "EXCEPTION_HANDLER": 'utils.handler.custom_exception_handler',
+    "EXCEPTION_HANDLER": 'utils.handler.wrapper_error_handler',
 }
 
 SIMPLE_JWT = {
@@ -165,21 +165,21 @@ SIMPLE_JWT = {
     'ALGORITHM': 'HS256',
 }
 
+samesite = os.getenv("SAMESITE", "Lax")
+secure = os.getenv("SECURE")=="True"
+
 
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS").split(",")
-
 CSRF_TRUSTED_ORIGINS = os.getenv("ALLOWED_ORIGINS").split(",")
-CSRF_COOKIE_SAMESITE = None
+
+CSRF_COOKIE_SAMESITE = samesite
 CSRF_COOKIE_HTTPONLY = False
-CSRF_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = secure
 
-GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID")
-GOOGLE_CLIENT_SECRET = os.environ.get("GOOGLE_CLIENT_SECRET")
-GOOGLE_REDIRECT_URI = os.environ.get("GOOGLE_REDIRECT_URI")
 
-SESSION_COOKIE_SECURE = os.getenv("SECURE")
-SESSION_COOKIE_SAMESITE = "lax"
+SESSION_COOKIE_SAMESITE = samesite
+SESSION_COOKIE_SECURE = secure
 SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_PATH = "/"
 SESSION_ENGINE = "django.contrib.sessions.backends.db"
