@@ -98,8 +98,8 @@ class GoogleCallBack(View):
 
 
         user, created = User.objects.get_or_create(email=email)
-        response = redirect(settings.FRONTEND_LOGIN_SUCCESS_URL if
-                            hasattr(settings, "FRONTEND_LOGIN_SUCCESS_URL") else "/")
+        response = redirect(os.environ.get("FRONTEND_LOGIN_SUCCESS_URL"), '/')
+
         handle_token = HandleToken(user, response)
 
         try:
