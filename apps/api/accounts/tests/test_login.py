@@ -13,7 +13,6 @@ class TestLogin(APITestCase):
         self.user = User.objects.create_user(email="saber@gmail.com", password="1234@5678")
         self.client = APIClient()
         self.url = reverse('login')
-        print(self.url)
 
     def assert_valid_cookie(self, cookie, expected_max_age):
         self.assertTrue(cookie.value)

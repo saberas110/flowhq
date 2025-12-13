@@ -25,7 +25,6 @@ class TestMiddleware(APITestCase):
     def test_valid_access_token(self):
         self.client.cookies["access"] = str(self.access)
         response = self.client.get(self.url)
-        print(response.cookies.items())
         self.assertEqual(response.status_code, 200)
 
     def test_correct_refresh_token_fake_access(self):
@@ -55,7 +54,7 @@ class TestMiddleware(APITestCase):
         self.client.cookies["access"] = 'sdfhaskdfhasdkfhsadkfhksafhskdfh'
         self.client.cookies["refresh"] = 'dsfhsdafhaslkfhdsfhsakfhsdkfhsdf'
         response = self.client.get(self.url)
-        print('res cookies', response.status_code)
+
 
 
 
