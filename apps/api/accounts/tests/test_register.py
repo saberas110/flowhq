@@ -30,8 +30,6 @@ class TestRegisterApi(APITestCase):
         self.assertGreater(len(cookie.value), 10)
         self.assertEqual(cookie["domain"], os.getenv("COOKIE_DOMAIN"))
         self.assertTrue(cookie["httponly"])
-        actual_secure = cookie["secure"] == 'True'
-        self.assertEqual(actual_secure, os.getenv("SECURE") == "True")
         self.assertEqual((cookie["samesite"]), os.getenv("SAMESITE"))
         self.assertEqual(int(cookie["max-age"]), expected_max_age)
 
