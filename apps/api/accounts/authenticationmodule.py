@@ -21,6 +21,8 @@ class HandleToken:
         refresh, access = self.create_token()
         access_lifetime = timedelta(minutes=5)
         refresh_lifetime = timedelta(days=1)
+        print('secure',os.getenv("SECURE") == "True")
+        print('secure',os.getenv("SECURE"))
         self.response.set_cookie(
             key="access",
             value=access,
