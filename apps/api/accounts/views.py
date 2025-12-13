@@ -2,7 +2,6 @@ import os
 import urllib.parse
 import secrets
 import requests
-from django.conf import settings
 from django.shortcuts import redirect
 from django.http import JsonResponse
 from django.utils.decorators import method_decorator
@@ -13,14 +12,15 @@ from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework_simplejwt.tokens import RefreshToken
-from django.contrib.auth import get_user_model, logout
-
+from django.contrib.auth import get_user_model
 from .authenticationmodule import HandleToken
 from .serializers import UserRegisterSerializer
 from .serializers import UserLoginSerializer
 
 User = get_user_model()
+
+
+
 
 class GoogleLogin(View):
     def get(self, request):
@@ -110,11 +110,11 @@ class GoogleCallBack(View):
         return handle_token.set_token_in_response()
 
 
+
 class RegisterUser(APIView):
     def post(self, request):
         srz_data = UserRegisterSerializer(data=request.data)
-        print('its srz_data', request.data)
-        if srz_data.is_valid():
+        if srz_data.is_valid(raise_exception=True):
             user = srz_data.create(srz_data.validated_data)
             response = Response(srz_data.data, status=status.HTTP_201_CREATED)
             handle_token = HandleToken(user, response)
@@ -135,12 +135,8 @@ class LogoutUser(APIView):
 class LoginUser(APIView):
     def post(self, request):
         srz_data = UserLoginSerializer(data=request.data)
-
-
-        print('request.data', srz_data)
         if srz_data.is_valid(raise_exception=True):
             user = srz_data.validated_data
-            print('user in view', user)
             response = Response(srz_data.data, status=status.HTTP_200_OK)
             handle_token = HandleToken(user, response)
             return handle_token.set_token_in_response()

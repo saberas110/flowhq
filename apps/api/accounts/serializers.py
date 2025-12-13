@@ -16,7 +16,6 @@ class UserRegisterSerializer(serializers.ModelSerializer):
 
 
     def create(self, validated_data):
-        print('in create data validated_data is :', validated_data)
         password = validated_data["confirm_password"]
         del validated_data ["password"]
         del validated_data["confirm_password"]
@@ -27,12 +26,11 @@ class UserRegisterSerializer(serializers.ModelSerializer):
 
 
     def validate(self, data):
-        print('in validate data data is :', data)
         if len(data["password"]) < 8 :
-            raise serializers.ValidationError({"message":"password must be more than 8 character"})
+            raise serializers.ValidationError({"password":"password must be more than 8 character"})
 
         if data["password"] != data["confirm_password"]:
-            raise serializers.ValidationError({"message":"passwords not match"})
+            raise serializers.ValidationError({"password":"passwords not match"})
         return data
 
 
@@ -47,7 +45,7 @@ class UserLoginSerializer(serializers.ModelSerializer):
         try:
             user = User.objects.get(email=attrs["email"])
             if not user.check_password(attrs["password"]):
-                raise serializers.ValidationError("password is wrong")
+                raise serializers.ValidationError({"password":"password is wrong."})
             return user
         except User.DoesNotExist:
-            raise serializers.ValidationError("User does not exist")
+            raise serializers.ValidationError({"user":"user does not exists."})

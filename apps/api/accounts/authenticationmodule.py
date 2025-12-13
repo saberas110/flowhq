@@ -1,4 +1,5 @@
 import os
+from datetime import timedelta
 
 from django.conf import settings
 
@@ -17,27 +18,25 @@ class HandleToken:
         return str(refresh), str(access_token)
 
     def set_token_in_response(self):
-
-
         refresh, access = self.create_token()
+        access_lifetime = timedelta(minutes=5)
+        refresh_lifetime = timedelta(days=1)
         self.response.set_cookie(
             key="access",
             value=access,
             httponly=True,
-            secure=os.getenv("SECURE")=="True",
+            secure=os.getenv("SECURE") == "True",
             samesite=os.getenv("SAMESITE"),
-            domain=os.getenv("COOKIE_DOMAIN", None)
+            domain=os.getenv("COOKIE_DOMAIN", None),
+            max_age=int(access_lifetime.total_seconds())
         )
         self.response.set_cookie(
             key="refresh",
             value=refresh,
             httponly=True,
-            secure=os.getenv("SECURE")=="True",
+            secure=os.getenv("SECURE") == "True",
             samesite=os.getenv("SAMESITE"),
-            domain= os.getenv("COOKIE_DOMAIN", None)
+            domain=os.getenv("COOKIE_DOMAIN", None),
+            max_age=int(refresh_lifetime.total_seconds())
         )
-        print('self.response', self.response)
         return self.response
-
-
-

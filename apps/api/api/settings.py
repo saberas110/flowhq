@@ -32,11 +32,6 @@ DEBUG = True
 ALLOWED_HOSTS = [os.getenv("ALLOWED_HOSTS")]
 
 
-print('ALLOWED_HOSTS', os.getenv("ALLOWED_HOSTS").split(","))
-
-print('ALLOWED_HOSTS in setting', ALLOWED_HOSTS)
-
-
 
 INSTALLED_APPS = [
     'daphne',
