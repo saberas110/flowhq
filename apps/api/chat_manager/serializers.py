@@ -63,3 +63,5 @@ class MessageSerializer(serializers.ModelSerializer):
     def get_is_me(self, obj):
         user = self.context.get('user')
         return user == obj.sender
+
+

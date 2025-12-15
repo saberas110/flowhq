@@ -71,5 +71,10 @@ class JWTAuthSocketMiddleWare(BaseMiddleware):
 
 
 
+class TestAuthMiddleware(BaseMiddleware):
+    async def __call__(self, scope, receive, send):
+        scope["user"] = AnonymousUser()  # یا یک user mock
+        return await super().__call__(scope, receive, send)
+
 
 

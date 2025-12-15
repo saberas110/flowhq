@@ -1,9 +1,12 @@
 import json
 
+from asgiref.sync import async_to_sync
+from channels.layers import get_channel_layer
 from django.db.models import Q
 
 from chat_manager.exceptions import ServiceAccountValidationError
 from chat_manager.models import Conversation, ServiceAccount, Message, Contact
+from chat_manager.serializers import MessageSerializer
 
 
 class WhatsAppHook:
@@ -30,15 +33,20 @@ class WhatsAppHook:
             'message_type': self.message_type,
             'sender': self.sender_phone
         }
-        msg = self.create_message(**kwargs)
-        return msg
+        srz_msg = self.create_message(kwargs)
 
-
-
-
-    def create_message(self, **kwargs):
+        channel_layer = get_channel_layer()
+        async_to_sync(channel_layer.group_send)(
+            f'chat_{conversation.id}',
+            {
+                'type': 'send.from_whatsapp_hook',
+                'message': srz_msg
+            }
+        )
+    def create_message(self, kwargs):
         message = Message.objects.create(**kwargs)
-        return message
+        srz_msg = MessageSerializer(message, context={'user': self.phone_number_id})
+        return srz_msg
 
 
     def get_service_account_by_phone(self, phone_number):
@@ -53,3 +61,7 @@ class WhatsAppHook:
         if service_account.exists():
             return service_account
         return None
+
+
+
+

@@ -9,6 +9,7 @@ from rest_framework_simplejwt.tokens import RefreshToken, AccessToken
 User = get_user_model()
 
 
+
 class TestRegisterApi(APITestCase):
     def setUp(self):
         self.client = APIClient()

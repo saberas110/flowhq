@@ -36,6 +36,8 @@ dependencies = [
     "pycparser==2.23",
     "pyjwt==2.10.1",
     "pyopenssl==25.3.0",
+    "pytest>=9.0.2",
+    "pytest-django>=4.11.1",
     "python-dotenv==1.2.1",
     "redis==7.0.1",
     "requests==2.32.5",

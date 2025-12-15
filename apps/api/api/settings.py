@@ -19,6 +19,7 @@ import dj_database_url
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
@@ -26,6 +27,7 @@ load_dotenv(BASE_DIR / ".env")
 
 SECRET_KEY = os.environ.get("SECRET_KEY")
 
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'api.settings')
 
 DEBUG = True
 
@@ -92,14 +94,14 @@ DATABASES = {
     )
 }
 
-# CHANNEL_LAYER = {
-#     'default': {
-#         "BACKEND": "channels_redis.core.RedisChannelLayer",
-#         "CONFIG": {
-#             "hosts": [(os.getenv("HOST"), int(os.getenv("REDIS_PORT", 6379)))]
-#         }
-#     }
-# }
+CHANNEL_LAYERS = {
+    'default': {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [(os.getenv("HOST"), int(os.getenv("REDIS_PORT", 6379)))]
+        }
+    }
+}
 
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
