@@ -17,18 +17,19 @@ class ErrorHandler:
             "NotAuthenticated": self.handle_authenticated,
         }
 
-        if self.response is not None:
+        if self.response is not None and self.response.data:
             self.response.data['code '] = self.response.status_code
 
-        exception_class = self.exc.__class__.__name__
+            exception_class = self.exc.__class__.__name__
+            print('exception_class: ', exception_class)
+            print('response.data', self.response.data)
+            if exception_class in handler:
+                error_list = []
+                for k, v in self.response.data.items():
+                    if type(v) == list:
+                        error_list.append(f'{k}: {v[0]}')
 
-        if exception_class in handler:
-            error_list = []
-            for k, v in self.response.data.items():
-                if type(v) == list:
-                    error_list.append(f'{k}: {v[0]}')
-
-            return handler[exception_class](error_list)
+                return handler[exception_class](error_list)
 
         return self.response
 

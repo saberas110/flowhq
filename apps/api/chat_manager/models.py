@@ -92,23 +92,21 @@ class Message(CreatedAtMixin, UpdatedAtMixin):
         ('failed', 'Failed'),
         ('received', 'Received'),
     ]
-    conversation = models.ForeignKey(Conversation, on_delete=models.CASCADE, related_name='messages')
     sender = models.CharField(max_length=255, blank=True)
     direction = models.CharField(max_length= 10 , choices=[('in', 'Inbound'), ('out', 'Outbound')])
     status = models.CharField(max_length=20, choices=MESSAGE_STATUS, default='pending')
     sent_at = models.DateTimeField(auto_now_add=True, null=True, blank=True)
     delivered_at = models.DateTimeField(null=True, blank=True)
-
     error_message = models.TextField(null=True, blank=True)
     retry_count = models.IntegerField(default=0)
-
+    text = models.TextField(null=True, blank=True)
     metadata = models.JSONField(default=dict, blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True, null=True, blank=True)
 
     class Meta:
-        ordering = ['created_at']
-        indexes = [
-            models.Index(fields=[ 'created_at']),
-        ]
+
+        abstract = True
+
 
     def mark_as_sent(self):
         self.status = 'sent'
@@ -127,7 +125,8 @@ class Message(CreatedAtMixin, UpdatedAtMixin):
 
 
 class EmailMessage(Message):
-
+    conversation = models.ForeignKey(Conversation, on_delete=models.CASCADE
+                                     , related_name='email_messages', null=True, blank=True)
     service_account = models.ForeignKey(GmailAccounts, models.CASCADE, null=True, related_name='emails')
     subject = models.CharField()
     from_email = models.EmailField()
@@ -135,15 +134,19 @@ class EmailMessage(Message):
     cc_email = models.JSONField(default=list, blank=True)
     bcc = models.JSONField(default=list, blank=True)
     reply_to = models.EmailField(null=True, blank=True)
-    gmail_message_id = models.CharField(max_length=500, unique=True, null=True, blank=True)
-    gmail_thread_id = models.CharField(max_length=500, null=True, blank=True)
+    email_message_id = models.CharField(max_length=500, unique=True, null=True, blank=True)
+    email_thread_id = models.CharField(max_length=500, null=True, blank=True)
     html_body = models.TextField(blank=True)
     has_attachments = models.BooleanField(default=False)
     labels = models.JSONField(default=list, blank=True)
 
     class Meta:
         verbose_name = 'Email Message'
+        ordering = ['created_at']
         verbose_name_plural = 'Email Messages'
+        indexes = [
+            models.Index(fields=['created_at']),
+        ]
 
     def __str__(self):
         return f'{self.subject} - {self.from_email} - {self.to_email}'
@@ -159,7 +162,8 @@ class EmailMessage(Message):
 
 class WhatsAppMessage(Message):
     """پیام واتساپ"""
-
+    conversation = models.ForeignKey(Conversation, on_delete=models.CASCADE
+                                     , related_name='whatsapp_messages', null=True, blank=True)
     whatsapp_account = models.ForeignKey(
         'WhatsAppAccount',
         on_delete=models.SET_NULL,
@@ -209,9 +213,9 @@ class WhatsAppMessage(Message):
         return self.message_type in ['image', 'video', 'audio', 'document']
 
 
-class MessageReadStatus(CreatedAtMixin):
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='message_reads')
-    message = models.ForeignKey(Message, on_delete=models.CASCADE, related_name='message_reads')
+# class MessageReadStatus(CreatedAtMixin):
+#     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='message_reads')
+#     message = models.ForeignKey(Message, on_delete=models.CASCADE, related_name='message_reads')
 
 
 

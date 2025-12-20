@@ -33,7 +33,7 @@ DEBUG = True
 
 ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS").split(",")
 
-
+print('trust origin',os.getenv("ALLOWED_ORIGINS").split(",") )
 
 
 

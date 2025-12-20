@@ -11,6 +11,8 @@ from django.views import View
 from rest_framework.views import APIView
 from django.http import JsonResponse
 from google.oauth2.credentials import Credentials
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
 
 from chat_manager.models import GmailAccounts
 
@@ -29,9 +31,6 @@ class GmailAuthStartView(View):
 
 class GmailAuthCallbackView(APIView):
     def get(self, request):
-
-        print('hello im from GmailAuthCallbackView')
-
         code = request.GET.get('code')
         state = request.GET.get('state')
         save_state = request.session.get('email_auth_state')
@@ -45,14 +44,16 @@ class GmailAuthCallbackView(APIView):
         credentials = Credentials(**token_data)
         service = google_build('gmail', 'v1', credentials=credentials)
         profile = service.users().getProfile(userId='me').execute()
+        print('profile', profile)
         email_address = profile['emailAddress']
         user_id = int(state)
-        user = User.objects.get(id=user_id)
+        user = User.objects.get(email=email_address)
+        print('user in GmailAuthCallbackView', user.organizations)
 
         email_account, created = GmailAccounts.objects.update_or_create(
             email=email_address,
             defaults={
-                'organization': user.organizations,
+                'organization': user.organizations.first(),
                 'access_token': token_data['token'],
                 'refresh_token': token_data['refresh_token'],
                 'token_uri': token_data['token_uri'],
@@ -67,13 +68,14 @@ class GmailAuthCallbackView(APIView):
             'created': created
         })
 
+@method_decorator(csrf_exempt, name='dispatch')
 class GmailWebHook(View):
     def post(self, request):
         try:
             print("\n" + "=" * 60)
             print("📬 Gmail Webhook Received!")
             print("=" * 60)
-            envelope = json.load(request.body.decode('utf-8'))
+            envelope = json.loads(request.body.decode('utf-8'))
             print(f"📦 Envelope: {envelope}")
 
             if 'message' not in envelope:
@@ -83,7 +85,7 @@ class GmailWebHook(View):
             notification = json.loads(data)
             print(f"📧 Notification: {notification}")
 
-            email_address = notification.get('email_address')
+            email_address = notification.get('emailAddress')
             history_id = notification.get('historyId')
 
             if not email_address or not history_id:

@@ -1,3 +1,5 @@
+import time
+
 from celery import shared_task
 from datetime import timedelta
 from django.utils import timezone
@@ -7,6 +9,7 @@ from chat_manager.email_service.gmail_service import setup_gmail_watch, get_hist
 from chat_manager.email_service.gmail_service import  fetch_email_by_id, logger, send_emil_via_gmail, _save_received_email
 from chat_manager.models import GmailAccounts, Message
 from chat_manager.serializers import MessageSerializer
+
 
 
 @shared_task
@@ -19,29 +22,95 @@ def renew_gmail_watches():
     for account in expiring_soon:
         setup_gmail_watch(account)
 
-                                                        # will be checked
 
 @shared_task
 def process_gmail_notifications(email_address, history_id):
+    """
+    پردازش Gmail notifications
 
+    Args:
+        email_address (str): آدرس ایمیل
+        history_id (str): History ID از Gmail notification
+    """
     try:
-        email_account = GmailAccounts.objects.get(email=email_address)
-        changes = get_history(email_account, email_account.history_id)
+        logger.info("=" * 60)
+        logger.info("🔄 Processing Gmail notification")
+        logger.info(f"   Email: {email_address}")
+        logger.info(f"   Notification History ID: {history_id}")
+        logger.info("=" * 60)
 
-        for change in changes:
-            if 'messagesAdded' in change:
-                for msg_addedd in change['messagesAdded']:
-                    message_id = msg_addedd['message']['id']
 
-                    email_data = fetch_email_by_id(email_account, message_id)
+        try:
+            email_account = GmailAccounts.objects.get(
+                email=email_address,
+                is_active=True
+            )
+            logger.info(f"✅ Found Gmail account")
+            logger.info(f"   Saved History ID: {email_account.history_id}")
+        except GmailAccounts.DoesNotExist:
+            logger.error(f"❌ Gmail account not found: {email_address}")
+            return
 
-                    if email_data:
-                        _save_received_email(email_account, email_data)
-        email_account.history_id = history_id
-        email_account.save()
+        logger.info("⏳ Waiting 3 seconds for Gmail to sync...")
+        time.sleep(3)
+
+        message_ids = get_history(email_account, history_id)
+
+        if not message_ids:
+            logger.info("ℹ️  No new messages to process")
+            return
+
+        logger.info(f"📧 Processing {len(message_ids)} messages")
+
+        # پردازش هر message
+        processed_count = 0
+        failed_count = 0
+
+        for message_id in message_ids:
+            try:
+                logger.info(f"\n📧 Processing: {message_id}")
+
+                # دریافت جزئیات email
+                email_data = fetch_email_by_id(email_account, message_id)
+
+                if email_data is None:
+                    logger.warning(f"⚠️  Could not fetch message {message_id}")
+                    failed_count += 1
+                    continue
+
+                if not isinstance(email_data, dict):
+                    logger.error(f"❌ Invalid data type: {type(email_data)}")
+                    failed_count += 1
+                    continue
+
+                logger.info(f"   ✅ Fetched successfully")
+                logger.info(f"   From: {email_data.get('from', 'Unknown')}")
+                logger.info(f"   Subject: {email_data.get('subject', 'No subject')}")
+                logger.info(f"   Date: {email_data.get('date', 'Unknown')}")
+                logger.info(f"   Snippet: {email_data.get('snippet', '')[:100]}")
+
+                _save_received_email(email_account, email_data)
+
+                processed_count += 1
+
+            except Exception as e:
+                logger.error(f"❌ Error processing {message_id}: {e}")
+                import traceback
+                traceback.print_exc()
+                failed_count += 1
+                continue
+
+        logger.info(f"\n{'=' * 60}")
+        logger.info(f"✅ Processing complete")
+        logger.info(f"   Processed: {processed_count}")
+        logger.info(f"   Failed: {failed_count}")
+        logger.info(f"   Final History ID: {email_account.history_id}")
+        logger.info("=" * 60 + "\n")
 
     except Exception as e:
-        logger.error(f'Error: {str(e)}')
+        logger.error(f"❌ Error in process_gmail_notifications: {e}")
+        import traceback
+        traceback.print_exc()
 
 
 @shared_task
@@ -83,4 +152,4 @@ def send_email_via_gmail_task(message_id):
         )
 
     except Exception as e:
-        logger.error(f"Error: {str(e)}")
+        logger.error(f"Error in send email via GmailApi: {str(e)}")
