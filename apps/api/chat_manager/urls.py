@@ -4,7 +4,7 @@ from chat_manager import views
 
 
 urlpatterns = [
-    path('conversations', views.Conversations.as_view()),
-    path('messages', views.Messages.as_view()),
-
+    path('ouath2callback', views.GmailAuthCallbackView.as_view()),
+    path('webhooks/gmail', views.GmailWebHook.as_view()),
+    path('gmail/auth/start', views.GmailAuthStartView.as_view()),
 ]

@@ -31,7 +31,9 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'api.settings')
 
 DEBUG = True
 
-ALLOWED_HOSTS = [os.getenv("ALLOWED_HOSTS")]
+ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS").split(",")
+
+
 
 
 
@@ -194,3 +196,16 @@ CORS_ALLOW_HEADERS = [
 ]
 
 
+GOOGLE_CLIENT_SECRET_FILE = os.path.join(
+    BASE_DIR,
+    os.getenv(
+        'GOOGLE_CLIENT_SECRET_FILE',
+        'chat_manager/email_service/email_credentials_secret.json'  # مقدار پیش‌فرض
+    )
+)
+
+# چک کردن وجود فایل
+if not os.path.exists(GOOGLE_CLIENT_SECRET_FILE):
+    print(f"⚠️  Warning: Credentials file not found at: {GOOGLE_CLIENT_SECRET_FILE}")
+else:
+    print(f"✅ Credentials file found: {GOOGLE_CLIENT_SECRET_FILE}")
