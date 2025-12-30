@@ -250,8 +250,11 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
     def create_message(self,data):
         from .models import Message
         from .serializers import MessageSerializer
-        data['content']['conversation_id'] = self.conversation_id
-        print('data in create_message', data)
+        print('data', data)
+        data['conversation_id'] = self.conversation_id
+        temp_id = data.pop('temp_id')
+        print('temp_id', temp_id)
+        print('data',data )
         msg = Message.objects.create_from_data(data)
         print('msg', msg)
         # srz_msg = MessageSerializer(msg, context={'user': '0910'})

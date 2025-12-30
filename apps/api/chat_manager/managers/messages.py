@@ -27,7 +27,5 @@ class MessageManager(PolymorphicManager):
             'whatsapp': Whatsapp,
         }
         service = services.get(service_type, Message)
-        content = data.get('content')
-        content.pop('attachments')
-        print('content', content)
-        return service.objects.create(**content)
+        data.pop('type')
+        return service.objects.create(**data)
