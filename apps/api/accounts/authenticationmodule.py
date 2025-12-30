@@ -3,6 +3,8 @@ from datetime import timedelta
 
 from django.conf import settings
 
+from chat_manager.models import Organization
+
 
 class HandleToken:
     def __init__(self, user, response):
@@ -18,8 +20,15 @@ class HandleToken:
         return str(refresh), str(access_token)
 
     def set_token_in_response(self):
+
+        if not self.user.organizations.exists():
+            org = Organization.objects.create()
+            org.owner.add(self.user)
+
+
+
         refresh, access = self.create_token()
-        access_lifetime = timedelta(minutes=5)
+        access_lifetime = timedelta(seconds=5)
         refresh_lifetime = timedelta(days=1)
 
         self.response.set_cookie(
@@ -28,6 +37,7 @@ class HandleToken:
             httponly=True,
             secure=os.getenv("SECURE") == "True",
             samesite=os.getenv("SAMESITE"),
+            path= '/',
             domain=os.getenv("COOKIE_DOMAIN", None),
             max_age=int(access_lifetime.total_seconds())
         )
@@ -38,6 +48,7 @@ class HandleToken:
             secure=os.getenv("SECURE") == "True",
             samesite=os.getenv("SAMESITE"),
             domain=os.getenv("COOKIE_DOMAIN", None),
+            path='/',
             max_age=int(refresh_lifetime.total_seconds())
         )
         return self.response

@@ -17,6 +17,7 @@ import {
   Shield,
   Globe,
 } from "lucide-react";
+import Link from "next/link";
 
 const Integrations: React.FC = () => {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
@@ -282,8 +283,16 @@ const Integrations: React.FC = () => {
                         </span>
                       </div>
                     ) : (
+
+
+
+
+
                       <button className="bg-blue-600 text-white px-3 py-1 rounded text-xs font-medium hover:bg-blue-700">
-                        Connect
+                        <Link
+                            href={process.env.NEXT_PUBLIC_GMAIL_AUTH_INTEGRATION!}>Connected
+
+                        </Link>
                       </button>
                     )}
                   </div>

@@ -5,3 +5,6 @@ class BaseError(Exception):
 
 class ServiceAccountValidationError(BaseError):
     """Service Account ValidationError"""
+
+class OrganizationValidationError(BaseError):
+    """Organization ValidationError"""

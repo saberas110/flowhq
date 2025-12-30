@@ -1,35 +1,46 @@
 from django.contrib.auth import get_user_model
 from django.utils import timezone
 from django.db import models
+from polymorphic.models import PolymorphicModel
 
+
+
+from chat_manager.managers.conversation import ConversationQuerySet
+from chat_manager.managers.messages import MessageManager, MessageQuerySet
 
 User  = get_user_model()
 
-
 class CreatedAtMixin(models.Model):
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True, null=True, blank=True)
 
     class Meta:
         abstract = True
-
-
 
 class UpdatedAtMixin(models.Model):
-    updated_at = models.DateTimeField(auto_now=True)
+    updated_at = models.DateTimeField(auto_now=True, null=True, blank=True)
 
     class Meta:
         abstract = True
+
+
+class CrUpDateMixin(CreatedAtMixin, UpdatedAtMixin):
+    """
+    inherits from CreatedAtMixin and UpdatedAtMixin
+    """
+    class Meta:
+        abstract = True
+
 
 
 class Organization(models.Model):
-    name = models.CharField(max_length=150)
+    name = models.CharField(max_length=150, default='default')
     owner = models.ManyToManyField(User, related_name='organizations')
 
     def __str__(self):
         return self.name
 
 
-class ServiceAccount(CreatedAtMixin):
+class ServiceAccount(PolymorphicModel, CreatedAtMixin):
     organization = models.ForeignKey(Organization, models.CASCADE, related_name='services')
     display_name = models.CharField(max_length=150, blank=True)
     webhook_url = models.URLField(blank=True)
@@ -37,9 +48,18 @@ class ServiceAccount(CreatedAtMixin):
     is_active = models.BooleanField(default=True)
 
 
-
     def __str__(self):
         return f'{self.__class__.__name__} {self.organization.name}'
+
+    def get_service_type(self):
+        types = {
+            'WhatsAppAccount': 'WhatsApp',
+            'GmailAccounts': 'Gmail'
+        }
+        class_name = type(self).__name__
+        return types.get(class_name, 'Service')
+
+
 
 
 class WhatsAppAccount(ServiceAccount):
@@ -73,16 +93,145 @@ class GmailAccounts(ServiceAccount):
 
 
 
-class Conversation(CreatedAtMixin, UpdatedAtMixin):
+class Conversation(CrUpDateMixin):
     organization = models.ForeignKey(Organization, models.CASCADE, related_name='conversations',  blank=True, null=True)
-    contact_id = models.CharField(max_length=255)
     title = models.CharField(max_length=100, null=True, blank=True)
+    contact_user_id = models.CharField(max_length=255, null=True, blank=True)
+    contact = models.ForeignKey('ChannelIdentity', on_delete=models.CASCADE, related_name='conversations', null=True, blank=True)
+
+    objects = ConversationQuerySet.as_manager()
+
+
+    @property
+    def last_message(self):
+        """last message from catch"""
+        last_messages = getattr(self, '_cached_last_message', None)
+        if last_messages is not None :
+            return last_messages[0] if last_messages else None
+
+        return self.messages.order_by('-created_at').first()
+
+
+    @property
+    def all_messages(self):
+        """all messages from catch"""
+        messages = getattr(self, '_cached_messages', None)
+        if messages is not None:
+            return messages
+
+        return self.messages.all()
+
+    @property
+    def primary_identity(self):
+        """
+        ✅ اولین identity
+        """
+        identities = self.identities
+        if isinstance(identities, list):
+            return identities[0] if identities else None
+        return identities.first() if identities else None
+
+    def get_display_name(self):
+        if self.contact:
+            return self.contact.get_display_name()
+        return self.title or ""
+
+    def get_avatar(self):
+        pass
+
+    def get_tags(self):
+        if self.contact:
+            tags = getattr(self.contact, '_cached_tags', None)
+            if tags is not None:
+                return tags
+            return self.contact.tags.all()
+        return []
+
+
+
+
+    def get_last_message(self):
+        return self.messages.order_by('-created_at').first()
+
+    def get_last_message_preview(self):
+        last = self.get_last_message()
+        if not last:
+            return None
+        preview = {
+            'text': last.text[:50] if last.text else '',
+            'created_at': last.created_at,
+            'sender': last.sender,
+            'service': last.get_service_type(),
+            'service_icon': last.get_service_icon()
+        }
+        return preview
+
+    # def get_unread_count(self):
+    #     return self.messages.filter(
+    #         direction='in',
+    #         status__in=['received', 'delivered']
+    #     ).exclude(status='read').count()
+    #
+    # def get_unread_count(self):
+    #     """
+    #     ✅ تعداد پیام‌های خوانده نشده
+    #     """
+    #     # اگر از annotate استفاده شده باشد
+    #     if hasattr(self, 'unread_messages'):
+    #         return self.unread_messages
+    #
+    #     # Fallback
+    #     return self.messages.filter(
+    #         direction='in',
+    #         status__in=['received', 'delivered']
+    #     ).exclude(status='read').count()
+    #
+    # def get_service_accounts(self):
+    #     """
+    #     ✅ لیست ServiceAccount های موجود (برای dropdown)
+    #     """
+    #     if not self.contact:
+    #         return []
+    #
+    #     identities = self.identities
+    #     service_accounts = []
+    #
+    #     for identity in identities:
+    #         if identity.service_account:
+    #             service_accounts.append({
+    #                 'id': identity.service_account.id,
+    #                 'type': identity.service_account.get_service_type(),
+    #                 'display_name': identity.service_account.display_name,
+    #                 'icon': identity.service_account.get_service_icon(),
+    #                 'channel': identity.channel,
+    #                 'external_id': identity.external_id,
+    #             })
+    #
+    #     return service_accounts
+    #
+    # def mark_all_as_read(self):
+    #     """
+    #     ✅ علامت‌گذاری همه پیام‌ها به عنوان خوانده شده
+    #     """
+    #     return self.messages.filter(
+    #         direction='in'
+    #     ).exclude(status='read').update(status='read')
 
     def __str__(self):
-        return f'{self.contact_id}--'
+        return f'{self.get_display_name()} - {self.id}'
 
 
-class Message(CreatedAtMixin, UpdatedAtMixin):
+
+
+
+
+
+class Message(PolymorphicModel, CrUpDateMixin):
+
+
+    objects = MessageManager.from_queryset(MessageQuerySet)()
+
+
     MESSAGE_STATUS = [
         ('pending', 'Pending'),
         ('sending', 'Sending'),
@@ -93,7 +242,7 @@ class Message(CreatedAtMixin, UpdatedAtMixin):
         ('received', 'Received'),
     ]
     sender = models.CharField(max_length=255, blank=True)
-    direction = models.CharField(max_length= 10 , choices=[('in', 'Inbound'), ('out', 'Outbound')])
+    direction = models.CharField(max_length= 10 , choices=[('in', 'Inbound'), ('out', 'Outbound')], blank=True)
     status = models.CharField(max_length=20, choices=MESSAGE_STATUS, default='pending')
     sent_at = models.DateTimeField(auto_now_add=True, null=True, blank=True)
     delivered_at = models.DateTimeField(null=True, blank=True)
@@ -101,11 +250,12 @@ class Message(CreatedAtMixin, UpdatedAtMixin):
     retry_count = models.IntegerField(default=0)
     text = models.TextField(null=True, blank=True)
     metadata = models.JSONField(default=dict, blank=True, null=True)
-    created_at = models.DateTimeField(auto_now_add=True, null=True, blank=True)
-
+    conversation = models.ForeignKey(Conversation, on_delete=models.CASCADE
+                                     , related_name='messages', null=True, blank=True)
     class Meta:
-
-        abstract = True
+        indexes = [
+            models.Index(fields=['created_at']),
+        ]
 
 
     def mark_as_sent(self):
@@ -119,14 +269,32 @@ class Message(CreatedAtMixin, UpdatedAtMixin):
         self.retry_count += 1
         self.save(update_fields=['status', 'error_message', 'retry_count'])
 
+    def get_service_type(self):
+        """return service type """
+        types = {
+            'EmailMessage': 'email',
+            'WhatsAppMessage': 'whatsapp',
+        }
+        class_name = type(self).__name__
+        return types.get(class_name, 'message')
+
+    def get_service_icon(self):
+        service_icons = {
+            'email': '📧',
+            'whatsapp': '💬',
+            'message': '📨'
+        }
+        return service_icons.get(self.get_service_type(), '📨')
+
+
+
+
     def __str__(self):
-        return (f'{self.body}  ---  with{self.conversation} '
+        return (f'{self.text[:20]}  ---  with{self.conversation} '
                 f' sender : {self.sender}')
 
 
 class EmailMessage(Message):
-    conversation = models.ForeignKey(Conversation, on_delete=models.CASCADE
-                                     , related_name='email_messages', null=True, blank=True)
     service_account = models.ForeignKey(GmailAccounts, models.CASCADE, null=True, related_name='emails')
     subject = models.CharField()
     from_email = models.EmailField()
@@ -144,9 +312,7 @@ class EmailMessage(Message):
         verbose_name = 'Email Message'
         ordering = ['created_at']
         verbose_name_plural = 'Email Messages'
-        indexes = [
-            models.Index(fields=['created_at']),
-        ]
+
 
     def __str__(self):
         return f'{self.subject} - {self.from_email} - {self.to_email}'
@@ -161,9 +327,7 @@ class EmailMessage(Message):
 
 
 class WhatsAppMessage(Message):
-    """پیام واتساپ"""
-    conversation = models.ForeignKey(Conversation, on_delete=models.CASCADE
-                                     , related_name='whatsapp_messages', null=True, blank=True)
+
     whatsapp_account = models.ForeignKey(
         'WhatsAppAccount',
         on_delete=models.SET_NULL,
@@ -219,7 +383,7 @@ class WhatsAppMessage(Message):
 
 
 
-class Contact(CreatedAtMixin, UpdatedAtMixin):
+class Contact(CrUpDateMixin):
     name = models.CharField(max_length=100, null=True, blank=True)
     avatar_url = models.URLField(null=True, blank=True)
     tags = models.ManyToManyField('ContactTag', blank=True)
@@ -228,13 +392,14 @@ class Contact(CreatedAtMixin, UpdatedAtMixin):
         return self.name or None
 
 
-class ChannelIdentity(CreatedAtMixin, UpdatedAtMixin):
+class ChannelIdentity(CrUpDateMixin):
     CHANNEL_CHOICES = [
         ("whatsapp", "WhatsApp"),
         ("email", "Email"),
     ]
     contact = models.ForeignKey(Contact, models.CASCADE, "identities")
     service_account = models.ForeignKey(ServiceAccount, models.CASCADE, "identities")
+    organization = models.ForeignKey(Organization, models.CASCADE, "identities", null=True)
     external_id = models.CharField(max_length=255, db_index=True)
     channel = models.CharField(max_length=25, choices=CHANNEL_CHOICES)
 
@@ -245,7 +410,7 @@ class ChannelIdentity(CreatedAtMixin, UpdatedAtMixin):
         return f"{self.channel}--:{self.external_id}"
 
 
-class ContactTag(CreatedAtMixin, UpdatedAtMixin):
+class ContactTag(CrUpDateMixin):
     service_account = models.ForeignKey(ServiceAccount, on_delete=models.CASCADE, related_name='tags')
     name = models.CharField(max_length=50)
     color = models.CharField(max_length=20, default='#cccccc')

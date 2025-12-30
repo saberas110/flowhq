@@ -9,6 +9,8 @@ from chat_manager.routing import websocket_urlpatterns
 
 User = get_user_model()
 
+
+
 @pytest.mark.asyncio
 @pytest.mark.django_db(transaction=True)
 class TestChatConsumer:

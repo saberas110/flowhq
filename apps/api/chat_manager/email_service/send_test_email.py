@@ -3,6 +3,8 @@ from os import getenv
 import django
 import os
 
+
+
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'api.settings')
 django.setup()
 
@@ -13,7 +15,6 @@ from email.mime.text import MIMEText
 import base64
 import time
 
-# دریافت account
 acc = GmailAccounts.objects.filter(is_active=True).first()
 
 if acc:
@@ -29,20 +30,19 @@ if acc:
         scopes=['https://www.googleapis.com/auth/gmail.modify']
     )
 
-    # ساخت service
     service = build('gmail', 'v1', credentials=creds)
 
-    # ✅ دریافت History ID قبل از ارسال
     profile_before = service.users().getProfile(userId='me').execute()
     history_id_before = profile_before['historyId']
     print(f"📊 History ID before: {history_id_before}")
 
     # ساخت پیام
     timestamp = int(time.time())
-    message = MIMEText(f'Test email saber sent at {timestamp}\n\nThis is a webhook test.')
+    message = MIMEText(f'hello im saber this is to {timestamp}\n\nThis is a webhook test.')
     message['to'] = 'saberas110@gmail.com'
     message['from'] = acc.email
     message['subject'] = f'Webhook Test {timestamp}'
+    message['direction'] = 'out'
 
     # Encode
     raw = base64.urlsafe_b64encode(message.as_bytes()).decode()

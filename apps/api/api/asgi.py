@@ -3,9 +3,6 @@ import os
 import django
 from django.core.asgi import get_asgi_application
 
-
-
-
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'api.settings')
 
 django.setup()
@@ -27,5 +24,11 @@ application = ProtocolTypeRouter(
             ),
 
         )
+        # "websocket":
+        #     URLRouter(
+        #         all_websocket_urlpatterns
+        #     ),
+
+
     }
 )

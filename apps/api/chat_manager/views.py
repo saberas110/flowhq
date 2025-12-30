@@ -2,6 +2,10 @@ import json
 import base64
 from django.contrib.auth import get_user_model
 from googleapiclient.discovery import build as google_build
+from rest_framework.permissions import IsAuthenticated
+
+from .models import Conversation, Message, GmailAccounts
+from .serializers import PolymorphicMessageSerializer
 from .email_service.gmail_service import setup_gmail_watch
 from chat_manager.celery_tasks.gmail_tasks import process_gmail_notifications
 from chat_manager.email_service.gmail_auth import get_email_auth_url
@@ -14,7 +18,6 @@ from google.oauth2.credentials import Credentials
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 
-from chat_manager.models import GmailAccounts
 
 User = get_user_model()
 
@@ -30,6 +33,7 @@ class GmailAuthStartView(View):
 
 
 class GmailAuthCallbackView(APIView):
+    permission_classes = [IsAuthenticated]
     def get(self, request):
         code = request.GET.get('code')
         state = request.GET.get('state')
@@ -47,8 +51,8 @@ class GmailAuthCallbackView(APIView):
         print('profile', profile)
         email_address = profile['emailAddress']
         user_id = int(state)
-        user = User.objects.get(email=email_address)
-        print('user in GmailAuthCallbackView', user.organizations)
+
+        user = request.user
 
         email_account, created = GmailAccounts.objects.update_or_create(
             email=email_address,
@@ -67,6 +71,7 @@ class GmailAuthCallbackView(APIView):
             'email': email_address,
             'created': created
         })
+
 
 @method_decorator(csrf_exempt, name='dispatch')
 class GmailWebHook(View):
@@ -112,3 +117,19 @@ class GmailWebHook(View):
     def get(self, request):
         """Health check"""
         return JsonResponse({'status': 'ok'})
+
+
+class ConversationView(APIView):
+
+    def get(self, request):
+        print('=' * 90)
+
+        conversation = Conversation.objects.filter(id=15).optimized_for_detail().first()._cached_messages
+        print('conversation', conversation)
+        srz_data = PolymorphicMessageSerializer(conversation, many=True)
+
+        print('=' * 90)
+        return JsonResponse(srz_data.data, safe=False)
+
+
+

@@ -15,6 +15,7 @@ SCOPES = [
 ]
 
 
+
 def get_email_auth_url(user_id):
     flow = Flow.from_client_secrets_file(
         client_secrets_file=settings.GOOGLE_CLIENT_SECRET_FILE,
@@ -66,55 +67,3 @@ def get_email_account(email_account):
     )
     service = build('gmail', 'v1', credentials=credentials)
     return service
-
-
-
-
-
-
-
-
-
-def get_gmail_service():
-    creds = None
-
-    if os.path.exists('token.pickle'):
-        with open('token.pickle', 'rb') as token:
-            creds = pickle.load(token)
-
-    if not creds or not creds.valid:
-        if creds and creds.expired and creds.refresh_token:
-            creds.refresh(Request())
-        else:
-            flow = InstalledAppFlow.from_client_secrets_file(
-                'email_credentials_secret.json',
-                SCOPES
-            )
-
-            creds = flow.run_local_server(port=8000)
-
-        with open('token.pickle', 'wb') as token:
-            pickle.dump(creds, token)
-
-    service = build('gmail', 'v1', credentials=creds)
-
-    return service
-
-
-
-
-
-
-
-
-
-
-
-
-if __name__ == '__main__':
-    service = get_gmail_service()
-
-    # تست: دریافت profile
-    profile = service.users().getProfile(userId='me').execute()
-    print(f"Email: {profile['emailAddress']}")
-    print(f"Total messages: {profile['messagesTotal']}")

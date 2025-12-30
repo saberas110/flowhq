@@ -4,6 +4,7 @@ import traceback
 from datetime import datetime
 from urllib.error import HTTPError
 
+from django.core.exceptions import ValidationError
 from django.utils import timezone
 from channels.layers import get_channel_layer
 from email.mime.text import MIMEText
@@ -335,21 +336,42 @@ def get_history(email_account, start_history_id):
 
 
 def _save_received_email(email_account, email_data):
-    print('email data', email_data)
+    print('='*90)
+    print(f'email_data: {email_data}')
+    print('='*90)
+
+    organization_email = email_account.email
+    _from = clean_email(email_data['from'])
+    _to = clean_email(email_data['to'])
+    contact_email = None
+    direction = None
+
+    try:
+        if organization_email == _from:
+            contact_email = _to
+            direction = 'in'
+        elif organization_email == _to:
+            contact_email = _from
+            direction = 'out'
+    except Exception as e:
+        raise ValidationError(str(e))
+
+
     conversation, created = Conversation.objects.get_or_create(
         organization=email_account.organization,
-        contact_id = email_data['from']
+        contact_user_id = contact_email
     )
     message = EmailMessage.objects.create(
         conversation=conversation,
-        sender=None,
-        text=email_data['body'],
-        email=email_data['subject'],
+        sender=_from,
+        text=email_data['snippet'],
+        subject=email_data['subject'],
         from_email=email_data['from'],
         to_email=email_data['to'],
         email_message_id=email_data['id'],
         status='received',
-        service_account=email_account
+        service_account=email_account,
+        direction=direction
     )
 
     channel_layer = get_channel_layer()
@@ -370,3 +392,17 @@ def _save_received_email(email_account, email_data):
     #             'conversation': ConversationSerializer(conversation).data
     #         }
     #     )
+
+
+
+def clean_email(email):
+
+    if '<' in email:
+        cl_email = email.split('<')[1]
+        if '>' in cl_email:
+            cl_email = cl_email.split('>')[0]
+
+        return cl_email
+    return email
+
+

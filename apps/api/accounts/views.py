@@ -22,6 +22,7 @@ User = get_user_model()
 
 
 
+
 class GoogleLogin(View):
     def get(self, request):
         print("redirect_uri", os.environ.get("GOOGLE_REDIRECT_URI"))
@@ -43,6 +44,8 @@ class GoogleLogin(View):
 
 class GoogleCallBack(View):
     def get(self, request):
+        print('hello im form google callback')
+
         state = request.GET.get('state')
 
         saved_state = request.session.get("oauth_state")

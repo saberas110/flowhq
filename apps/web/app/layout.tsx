@@ -1,4 +1,5 @@
 import './global.css';
+import ChatProvider from "@/contexts/ChatContext";
 
 export const metadata = {
   title: 'FlowHQ - AI Automation Platform',
@@ -13,7 +14,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        {children}
+        <ChatProvider>{children}</ChatProvider>
       </body>
     </html>
   );

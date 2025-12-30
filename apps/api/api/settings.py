@@ -31,9 +31,7 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'api.settings')
 
 DEBUG = True
 
-ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS").split(",")
-
-print('trust origin',os.getenv("ALLOWED_ORIGINS").split(",") )
+ALLOWED_HOSTS = ['*']
 
 
 
@@ -159,7 +157,7 @@ REST_FRAMEWORK = {
 
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=5),
-    "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
     'SIGNING_KEY': SECRET_KEY,
     'ALGORITHM': 'HS256',
 }

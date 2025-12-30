@@ -4,7 +4,6 @@ from twisted.python.util import raises
 
 User = get_user_model()
 
-from rest_framework.serializers import ErrorDetail
 
 class UserRegisterSerializer(serializers.ModelSerializer):
     confirm_password = serializers.CharField(write_only=True, required=True)
@@ -44,6 +43,7 @@ class UserLoginSerializer(serializers.ModelSerializer):
     def validate(self, attrs):
         try:
             user = User.objects.get(email=attrs["email"])
+            print(user.password)
             if not user.check_password(attrs["password"]):
                 raise serializers.ValidationError({"password":"password is wrong."})
             return user
