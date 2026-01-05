@@ -7,8 +7,8 @@ from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
 from chat_manager.email_service.gmail_service import setup_gmail_watch, get_history
 from chat_manager.email_service.gmail_service import  fetch_email_by_id, logger, send_emil_via_gmail, _save_received_email
-from chat_manager.models import GmailAccounts, Message
-from chat_manager.serializers import MessageSerializer
+from chat_manager.models import GmailAccounts, EmailMessage
+from chat_manager.serializers import PolymorphicMessageSerializer
 
 
 
@@ -118,38 +118,40 @@ def send_email_via_gmail_task(message_id):
     """ارسال ایمیل از طریق Gmail API"""
 
     try:
-        message = Message.objects.get(id=message_id)
+        message = EmailMessage.objects.get(id=message_id)
 
         # تغییر وضعیت
-        message.email_status = 'sending'
-        message.save()
+        message.status = 'sending'
+        message.save(update_fields=['status'])
 
         # ارسال
         gmail_message_id, error = send_emil_via_gmail(
-            email_account=message.email_account,
-            to=message.email_to,
-            subject=message.email_subject,
-            body=message.text
+            email_account=message.service_account,
+            to=message.to_email,
+            subject=message.subject,
+            body=message.html_body
         )
 
         if gmail_message_id:
-            message.email_status = 'sent'
+            message.status = 'sent'
             message.email_message_id = gmail_message_id
+            message.save(update_fields=['status', 'email_message_id'])
         else:
-            message.email_status = 'failed'
+            message.status = 'failed'
             message.error_message = error
-
-        message.save()
+            message.save(update_fields=['status', 'error_message'])
 
         # اطلاع‌رسانی WebSocket
         channel_layer = get_channel_layer()
         async_to_sync(channel_layer.group_send)(
-            f'chat_{message.conversation.id}',
+            f'chat_{message.conversation_id}',
             {
                 'type': 'email.status',
-                'message': MessageSerializer(message).data
+                'message': PolymorphicMessageSerializer(message).data
             }
         )
 
+    except EmailMessage.DoesNotExist:
+        logger.error(f"EmailMessage not found: {message_id}")
     except Exception as e:
         logger.error(f"Error in send email via GmailApi: {str(e)}")

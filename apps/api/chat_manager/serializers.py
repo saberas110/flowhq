@@ -1,5 +1,6 @@
 from unittest import getTestCaseNames
-
+from django.db.models import manager
+from drf_spectacular.utils import PolymorphicProxySerializer, extend_schema_field
 from pyasn1.type import tag
 from rest_framework import serializers
 
@@ -17,14 +18,17 @@ class BaseMessageSerializer(serializers.ModelSerializer):
     service_type = serializers.CharField(source='get_service_type', read_only=True)
     service_icon = serializers.CharField(source='get_service_icon', read_only=True)
     is_me = serializers.SerializerMethodField()
-    # created_at = serializers.SerializerMethodField()
-    # updated_at = serializers.SerializerMethodField()
+
 
     class Meta:
         model = Message
         fields = [
             'id', 'text', 'sender', 'direction', 'status',
             'created_at', 'updated_at', 'sent_at',
+            'service_type', 'service_icon', 'is_me', 'message_type'
+        ]
+        read_only_fields = [
+            'id', 'created_at', 'updated_at', 'sent_at',
             'service_type', 'service_icon', 'is_me'
         ]
 
@@ -37,11 +41,32 @@ class BaseMessageSerializer(serializers.ModelSerializer):
 
 
 
+class EmailServiceAccountSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    type = serializers.CharField()  # 'email'
+    display_name = serializers.CharField()
+    email = serializers.CharField()
+    icon = serializers.CharField()
+
+
+class WhatsAppServiceAccountSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    type = serializers.CharField()  # 'whatsapp'
+    display_name = serializers.CharField()
+    phone_number = serializers.CharField()
+    icon = serializers.CharField()
+
+
+
+
+
+
 class EmailMessageSerializer(BaseMessageSerializer):
     """
     ✅ Serializer برای EmailMessage
     """
     service_account = serializers.SerializerMethodField()
+    html_body = serializers.CharField(required=True, allow_blank=True)
 
     class Meta(BaseMessageSerializer.Meta):
         model = EmailMessage
@@ -51,7 +76,13 @@ class EmailMessageSerializer(BaseMessageSerializer):
             'email_message_id', 'email_thread_id',
             'service_account'
         ]
+        read_only_fields = list(BaseMessageSerializer.Meta.read_only_fields) + [
+            'has_attachments', 'labels',
+            'email_message_id', 'email_thread_id',
+            'service_account', 'to_email'
+        ]
 
+    @extend_schema_field(EmailServiceAccountSerializer)
     def get_service_account(self, obj):
 
         """
@@ -67,7 +98,7 @@ class EmailMessageSerializer(BaseMessageSerializer):
             }
         return None
 
-
+@extend_schema_field(WhatsAppServiceAccountSerializer)
 class WhatsAppMessageSerializer(BaseMessageSerializer):
     """
     ✅ Serializer برای WhatsAppMessage
@@ -78,9 +109,13 @@ class WhatsAppMessageSerializer(BaseMessageSerializer):
     class Meta(BaseMessageSerializer.Meta):
         model = WhatsAppMessage
         fields = BaseMessageSerializer.Meta.fields + [
-            'from_number', 'to_number', 'message_type',
+            'from_number', 'to_number',
             'media_url', 'media_id', 'mime_type', 'caption',
             'template_name', 'template_language', 'template_parameters',
+            'wa_message_id', 'wa_status', 'is_media',
+            'service_account'
+        ]
+        read_only_fields = list(BaseMessageSerializer.Meta.read_only_fields) + [
             'wa_message_id', 'wa_status', 'is_media',
             'service_account'
         ]
@@ -114,6 +149,33 @@ class PolymorphicMessageSerializer(serializers.Serializer):
         return BaseMessageSerializer(instance, context = self.context).data
 
 
+class LastMessageSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    text = serializers.CharField()
+    created_at = serializers.DateTimeField()
+    sender = serializers.CharField()
+    direction = serializers.CharField()
+    status = serializers.CharField()
+    service_type = serializers.CharField(source='get_service_type', read_only=True)
+    service_icon = serializers.CharField(source='get_service_icon', read_only=True)
+
+
+class TagSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    name = serializers.CharField()
+    color = serializers.CharField()
+
+
+
+class ContactSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    name = serializers.CharField()
+    avatar = serializers.CharField()
+    tags = TagSerializer(many=True, allow_null=True)
+
+
+
+
 
 class ConversationSerializer(serializers.ModelSerializer):
     contact = serializers.SerializerMethodField()
@@ -123,7 +185,7 @@ class ConversationSerializer(serializers.ModelSerializer):
         model = Conversation
         fields = ['id', 'last_message', 'contact']
 
-
+    @extend_schema_field(ContactSerializer)  # 👈 Add this decorator
     def get_contact(self, obj):
         if not obj.contact:
             return {
@@ -146,22 +208,15 @@ class ConversationSerializer(serializers.ModelSerializer):
                 for tag in tags
             ]
         }
-
+    @extend_schema_field(LastMessageSerializer)  
     def get_last_message(self, obj):
         last_msg = obj.last_message
-        if not last_msg: return None
+        if not last_msg:
+             return None
 
-        return {
-            'id': last_msg.id,
-            'text': last_msg.text[:30] if last_msg and last_msg.text else "",
-            'created_at': last_msg.created_at.isoformat()[-10:],   # will be check
-            'sender': last_msg.sender,
-            'direction': last_msg.direction,
-            'status': last_msg.status,
-            # 'status_icon': last_msg.get_status_icon(),
-            'channel': last_msg.get_service_type(),
-            'service_icon': last_msg.get_service_icon(),
-        }
+        return LastMessageSerializer(last_msg).data
+
+
 
 
 class MessageSerializer(serializers.ModelSerializer):
@@ -171,6 +226,7 @@ class MessageSerializer(serializers.ModelSerializer):
         model = Message
         fields = ['id', 'text', 'is_me', 'created_at', 'updated_at']
 
+    @extend_schema_field(bool)
     def get_is_me(self, obj):
         user = self.context.get('user')
         return user == obj.sender
@@ -183,12 +239,82 @@ class ConversationDetailSerializer(serializers.ModelSerializer):
         model = Conversation
         fields = ['messages', ]
 
+
+   
+
+
+
     def get_service_type(self, obj):
         """
             ✅ لیست ServiceAccount های موجود (برای dropdown ارسال پیام)
             Format:
             [
-                {
+                {class LastMessageSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    text = serializers.CharField()
+    created_at = serializers.DateTimeField()
+    sender = serializers.CharField()
+    direction = serializers.CharField()
+    status = serializers.CharField()
+    service_type = serializers.CharField(source='get_service_type', read_only=True)
+    service_icon = serializers.CharField(source='get_service_icon', read_only=True)
+
+
+class TagSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    name = serializers.CharField()
+    color = serializers.CharField()
+
+
+
+class ContactSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    name = serializers.CharField()
+    avatar = serializers.CharField()
+    tags = TagSerializer(many=True, allow_null=True)
+
+
+
+
+
+class ConversationSerializer(serializers.ModelSerializer):
+    contact = serializers.SerializerMethodField()
+    last_message = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Conversation
+        fields = ['id', 'last_message', 'contact']
+
+    @extend_schema_field(ContactSerializer)  # 👈 Add this decorator
+    def get_contact(self, obj):
+        if not obj.contact:
+            return {
+                'id': obj.contact_user_id,
+                'name': obj.contact_user_id ,
+                'avatar': '',
+                'tags': None
+            }
+
+        tags = getattr(obj.contact, '_cached_tags', None)
+        if tags is None:
+            tags = obj.contact.tags.all()
+
+        return {
+            'id': obj.contact.id,
+            'name': obj.contact.name or '',
+            'avatar': '',
+            'tags': [
+                {'id': tag.id, 'name': tag.name or '', 'color': tag.colort}
+                for tag in tags
+            ]
+        }
+    @extend_schema_field(LastMessageSerializer)  
+    def get_last_message(self, obj):
+        last_msg = obj.last_message
+        if not last_msg:
+             return None
+
+        return LastMessageSerializer(last_msg).data
                     'id': 1,
                     'type': 'email',
                     'display_name': 'پشتیبانی',
@@ -207,6 +333,14 @@ class ConversationDetailSerializer(serializers.ModelSerializer):
     #     return obj.contact_user_id if obj.contact_user_id else None
 
 
+
+    @extend_schema_field(PolymorphicProxySerializer(
+        component_name='Message',
+        serializers=[EmailMessageSerializer, 
+        WhatsAppMessageSerializer, BaseMessageSerializer],
+        resource_type_field_name='channel',
+        many=True
+    ))
     def get_messages(self, obj):
         messages = obj.messages.all()
         return PolymorphicMessageSerializer(

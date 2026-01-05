@@ -3,12 +3,12 @@
   "private": true,
   "scripts": {
     "build": "turbo run build",
-    "dev": "turbo run dev",
+    "dev": "turbo run dev --filter=web --filter=cms ",
+    "dev:all": "turbo run dev  ngrok",
     "lint": "turbo run lint",
-
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "check-types": "turbo run check-types",
-    "saber": "pnpm dev && source/////bin/bash -c \"/home/saber/Desktop/New Folder 2/flowHQ/apps/venv/bin/activate && exec bash\"\n/bin/bash: line 1: /home/saber/Desktop/New: No such file or directory"
+    "generate-types": "pnpm --filter @flowhq/shared generate-types"
   },
   "devDependencies": {
     "prettier": "^3.6.2",

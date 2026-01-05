@@ -1,22 +1,12 @@
-import {useCallback} from "react";
-import {ReadyState} from "react-use-websocket";
-import {MessageStatus, MessageType, TAttachment, TLocalEmailMessage, TSendEmailRequest,} from "@flowhq/shared";
-import {useChatContext} from "@/contexts/ChatContext";
+import { useCallback } from "react";
+import { ReadyState } from "react-use-websocket";
+import { TStatusEnum, TMessageTypeEnum, TLocalMessage, TDirectionEnum,  TSendMessageParams, TSendEmailMessage, TEmailMessageRequest, } from "@flowhq/shared";
+import { useChatContext } from "@/contexts/ChatContext";
 
-type SendEmailParams = {
-  text: string;
-  subject: string;
-  body: string;
-  to: string;
-  from: string;
-  cc?: string;
-  bcc?: string;
-  attachments?: File[];
-};
 
 type TUseSendParams = {
   readyState: ReadyState;
-  sendJsonMessage: (message: TSendEmailRequest) => void;
+  sendJsonMessage: (message: TSendMessageParams) => void;
   conversation_id: number;
 };
 
@@ -47,42 +37,47 @@ export default function useSendMessage({
   }, []);
 
   const sendEmailMessage = useCallback(
-    async (params: SendEmailParams) => {
+
+    async (params: TEmailMessageRequest) => {
       if (readyState !== ReadyState.OPEN) {
         console.log("connection failed");
         return;
       }
+
+        console.log('params', params);
+        
+
+
       const tempId = generateTempId();
       try {
-        let attachments: TAttachment[] = [];
-        if (params.attachments && params.attachments.length > 0) {
-          const uploadPromises = params.attachments.map(async (file) => {
-            return {
-              name: file.name,
-              url: await uploadFile(file),
-              size: file.size,
-              type: file.type,
-            };
-          });
-          attachments = await Promise.all(uploadPromises);
-        }
+        // let attachments: TAttachment[] = [];
+        // if (params.attachments && params.attachments.length > 0) {
+        //   const uploadPromises = params.attachments.map(async (file) => {
+        //     return {
+        //       name: file.name,
+        //       url: await uploadFile(file),
+        //       size: file.size,
+        //       type: file.type,
+        //     };
+        //   });
+        //   attachments = await Promise.all(uploadPromises);
+        // }
 
-        const tempMessage: TLocalEmailMessage = {
+        const tempMessage: TLocalMessage = {
           temp_id: tempId,
-          type: MessageType.EMAIL,
-          text: params.text || "",
+          message_type: TMessageTypeEnum.EMAIL,
+          text: params.html_body || "",
           subject: params.subject.trim(),
-          from_email: params.from,
-          to_email: params.to,
-          html_body: params.body.trim(),
-          status: MessageStatus.PENDING,
+          html_body: params.html_body?.trim(),
+          from_email: params.from_email,
+          status: TStatusEnum.PENDING,
           sender: "user",
-          direction: "out",
+          direction: TDirectionEnum.OUT,
           conversation_id,
-          created_at: new Date().toISOString(),
-          ...(params.cc && { cc_email: params.cc }),
-          ...(params.bcc && { bcc: params.bcc }),
-          ...(attachments.length > 0 && { attachments }),
+          created_at: new Date().toISOString(), ...(params.cc_email ? { cc_email: params.cc_email } : {}),
+          ...(params.bcc ? { bcc: params.bcc } : {}),
+          ...(params.cc_email ? { cc_email: params.cc_email } : {}),
+          // ...(attachments.length > 0 && { attachments }),
         };
 
         console.log("tempMessage", tempMessage);
@@ -91,27 +86,26 @@ export default function useSendMessage({
 
 
 
-        const sendEmail: TSendEmailRequest = {
+        const sendEmail: TSendEmailMessage= {
           temp_id: tempId,
-          type: MessageType.EMAIL,
+          message_type: TMessageTypeEnum.EMAIL,
           text: params.text || "",
           subject: params.subject.trim(),
-          from_email: params.from.trim(),
-          to_email: params.to.trim(),
-          html_body: params.body.trim(),
+          from_email:params.from_email,
+          html_body: params.html_body?.trim(),
           sender: "current_user",
-          ...(params.cc && { cc_email: params.cc.trim() }),
-          ...(params.bcc && { bcc: params.bcc.trim() }),
-          ...(attachments.length > 0 && { attachments }),
+          ...(params.bcc ? { bcc: params.bcc } : {}),
+          ...(params.cc_email ? { cc_email: params.cc_email } : {}),
+          // ...(attachments.length > 0 && { attachments }),
         }
 
         sendJsonMessage(sendEmail);
       } catch (err) {
         console.log(err);
-           setMessages((prev) =>
+        setMessages((prev) =>
           prev.map((msg) =>
             'temp_id' in msg && msg.temp_id === tempId
-              ? { ...msg, status: MessageStatus.FAILED }
+              ? { ...msg, status: TStatusEnum.FAILED }
               : msg
           )
         );

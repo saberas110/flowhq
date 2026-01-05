@@ -4,13 +4,13 @@ import React, {
   useContext,
   useState,
 } from "react";
-import { TChatList, TMessage } from "@flowhq/shared";
+import { TConversation, TMessage, TMessageContext } from "@flowhq/shared";
 
 export type TChatContext = {
-  chatList: TChatList[];
-  messages: TMessage[];
-  setMessages: React.Dispatch<React.SetStateAction<TMessage[]>>;
-  setChatList: React.Dispatch<React.SetStateAction<TChatList[]>>;
+  chatList: TConversation[];
+  messages: TMessageContext[];
+  setMessages: React.Dispatch<React.SetStateAction<TMessageContext[]>>;
+  setChatList: React.Dispatch<React.SetStateAction<TConversation[]>>;
 };
 
 
@@ -29,8 +29,8 @@ export const useChatContext = () => {
 
 export default function ChatProvider({ children }: { children: React.ReactNode }) {
 
-  const [chatList, setChatList] = useState<TChatList[]>([]);
-  const [messages, setMessages] = useState<TMessage[]>([])
+  const [chatList, setChatList] = useState<TConversation[]>([]);
+  const [messages, setMessages] = useState<TMessageContext[]>([])
 
 
 

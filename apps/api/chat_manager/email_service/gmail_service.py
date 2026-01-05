@@ -361,18 +361,24 @@ def _save_received_email(email_account, email_data):
         organization=email_account.organization,
         contact_user_id = contact_email
     )
-    message = EmailMessage.objects.create(
-        conversation=conversation,
-        sender=_from,
-        text=email_data['snippet'],
-        subject=email_data['subject'],
-        from_email=email_data['from'],
-        to_email=email_data['to'],
+    message, created = EmailMessage.objects.get_or_create(
         email_message_id=email_data['id'],
-        status='received',
-        service_account=email_account,
-        direction=direction
+        defaults={
+            'conversation': conversation,
+            'sender': _from,
+            'text': email_data['snippet'],
+            'subject': email_data['subject'],
+            'from_email': email_data['from'],
+            'to_email': email_data['to'],
+            'status': 'received',
+            'service_account': email_account,
+            'direction': direction
+        }
     )
+    
+    if not created:
+        logger.info(f"Email already exists: {email_data['id']}")
+        return message
 
     channel_layer = get_channel_layer()
 

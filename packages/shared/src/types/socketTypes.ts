@@ -1,8 +1,8 @@
-import { TChatList, TMessage } from "@flowhq/shared";
+import { TConversation, TMessage } from "@flowhq/shared";
 
 
 type ChatListMessage = {
-    conversations: TChatList[]
+    conversations: TConversation[]
     type: 'chat_list'
 }
 

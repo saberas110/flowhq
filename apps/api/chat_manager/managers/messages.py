@@ -21,11 +21,13 @@ class MessageManager(PolymorphicManager):
 
     def create_from_data(self, data):
         from chat_manager.models import EmailMessage, Message
-        service_type = data.get('type')
+        service_type = data.get('message_type')
         services = {
             'email': EmailMessage,
             'whatsapp': Whatsapp,
         }
         service = services.get(service_type, Message)
-        data.pop('type')
+        data.pop('message_type')
+
+        print('data in create_from_data', data)
         return service.objects.create(**data)

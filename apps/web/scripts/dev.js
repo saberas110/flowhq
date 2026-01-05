@@ -33,7 +33,8 @@ loadEnv();
 const port = process.env.WEB_PORT || "6500";
 
 // Start Next.js dev server
-const args = ["dev", "--turbopack", "-p", port];
+// -H 0.0.0.0 exposes the server on all network interfaces (allows phone access)
+const args = ["dev", "--turbopack", "-p", port, "-H", "0.0.0.0"];
 const next = spawn("next", args, {
   stdio: "inherit",
   shell: true,

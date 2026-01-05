@@ -36,9 +36,9 @@ export default function DashboardHeader({
   const currentPage = pageNames[pathname] || "Dashboard";
 
   return (
-    <SidebarProvider>
+    <SidebarProvider className="h-svh">
       <AppSidebar />
-      <SidebarInset>
+      <SidebarInset className="overflow-hidden">
         <header className="sticky top-0 z-10 flex h-16 shrink-0 items-center gap-2 border-b bg-white transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
           <div className="flex items-center gap-2 px-4">
             <SidebarTrigger className="-ml-1" />
@@ -56,7 +56,7 @@ export default function DashboardHeader({
             </Breadcrumb>
           </div>
         </header>
-        <div className="flex-1 overflow-auto">{children}</div>
+        <div className="flex-1 overflow-auto h-0 min-h-0">{children}</div>
       </SidebarInset>
     </SidebarProvider>
   );

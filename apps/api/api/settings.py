@@ -46,7 +46,8 @@ INSTALLED_APPS = [
     'accounts',
     'corsheaders',
     'chat_manager',
-    'rest_framework_simplejwt'
+    'rest_framework_simplejwt',
+    'drf_spectacular'
 
 ]
 
@@ -153,7 +154,23 @@ REST_FRAMEWORK = {
     ],
 
     "EXCEPTION_HANDLER": 'utils.handler.wrapper_error_handler',
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
 }
+
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'Chat Manager API',
+    'DESCRIPTION': 'API for managing multi-channel conversations',
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
+    'COMPONENT_SPLIT_REQUEST': True,
+    'SCHEMA_PATH_PREFIX': '/api/',
+    'DISABLE_ERRORS_AND_WARNINGS': True,
+
+}
+
+
+
+
 
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=5),

@@ -241,6 +241,21 @@ class Message(PolymorphicModel, CrUpDateMixin):
         ('failed', 'Failed'),
         ('received', 'Received'),
     ]
+
+    MESSAGE_TYPES = [
+        ('email', 'Email'),
+        ('whatsapp', 'WhatsApp'),
+        ('text', 'Text'),
+        ('image', 'Image'),
+        ('video', 'Video'),
+        ('audio', 'Audio'),
+        ('document', 'Document'),
+        ('location', 'Location'),
+        ('contact', 'Contact'),
+        ('template', 'Template'),
+    ]
+    message_type = models.CharField(max_length=20, choices=MESSAGE_TYPES, default='text')
+
     sender = models.CharField(max_length=255, blank=True)
     direction = models.CharField(max_length= 10 , choices=[('in', 'Inbound'), ('out', 'Outbound')], blank=True)
     status = models.CharField(max_length=20, choices=MESSAGE_STATUS, default='pending')
@@ -290,7 +305,7 @@ class Message(PolymorphicModel, CrUpDateMixin):
 
 
     def __str__(self):
-        return (f'{self.text[:20]}  ---  with{self.conversation} '
+        return (f' with{self.conversation} '
                 f' sender : {self.sender}')
 
 
@@ -304,7 +319,7 @@ class EmailMessage(Message):
     reply_to = models.EmailField(null=True, blank=True)
     email_message_id = models.CharField(max_length=500, unique=True, null=True, blank=True)
     email_thread_id = models.CharField(max_length=500, null=True, blank=True)
-    html_body = models.TextField(blank=True)
+    html_body = models.TextField( blank=True)
     has_attachments = models.BooleanField(default=False)
     labels = models.JSONField(default=list, blank=True)
 
@@ -340,20 +355,9 @@ class WhatsAppMessage(Message):
     from_number = models.CharField(max_length=20)
     to_number = models.CharField(max_length=20)
 
-    # نوع پیام
-    MESSAGE_TYPES = [
-        ('text', 'Text'),
-        ('image', 'Image'),
-        ('video', 'Video'),
-        ('audio', 'Audio'),
-        ('document', 'Document'),
-        ('location', 'Location'),
-        ('contact', 'Contact'),
-        ('template', 'Template'),
-    ]
-    message_type = models.CharField(max_length=20, choices=MESSAGE_TYPES, default='text')
+ 
 
-    # رسانه
+ 
     media_url = models.URLField(null=True, blank=True)
     media_id = models.CharField(max_length=200, null=True, blank=True)
     mime_type = models.CharField(max_length=100, null=True, blank=True)

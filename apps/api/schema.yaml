@@ -1,0 +1,670 @@
+openapi: 3.0.3
+info:
+  title: Chat Manager API
+  version: 1.0.0
+  description: API for managing multi-channel conversations
+paths:
+  /api/accounts/csrf:
+    get:
+      operationId: accounts_csrf_retrieve
+      tags:
+      - accounts
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/accounts/login:
+    post:
+      operationId: accounts_login_create
+      tags:
+      - accounts
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/accounts/logout:
+    get:
+      operationId: accounts_logout_retrieve
+      tags:
+      - accounts
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/accounts/register:
+    post:
+      operationId: accounts_register_create
+      tags:
+      - accounts
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/accounts/userstatus:
+    get:
+      operationId: accounts_userstatus_retrieve
+      tags:
+      - accounts
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/chat/hello:
+    get:
+      operationId: chat_hello_retrieve
+      tags:
+      - chat
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/chat/ouath2callback:
+    get:
+      operationId: chat_ouath2callback_retrieve
+      tags:
+      - chat
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/chat/schema/{id}/conversatons_detail/:
+    get:
+      operationId: chat_schema_conversatons_detail_list
+      description: مکالمه جزئی
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - chat
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ConversationDetail'
+          description: ''
+  /api/chat/schema/conversations/:
+    get:
+      operationId: chat_schema_conversations_list
+      description: لیست مکالمات
+      tags:
+      - chat
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Conversation'
+          description: ''
+  /api/chat/schema/send_email/:
+    post:
+      operationId: chat_schema_send_email_create
+      description: ⚠️ فقط برای تولید schema - استفاده نمی‌شه!
+      tags:
+      - chat
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmailMessageRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/EmailMessageRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/EmailMessageRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmailMessage'
+          description: ''
+  /api/chat/schema/send_message/:
+    post:
+      operationId: chat_schema_send_message_create
+      description: ⚠️ فقط برای تولید schema - استفاده نمی‌شه!
+      tags:
+      - chat
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BaseMessageRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/BaseMessageRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/BaseMessageRequest'
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BaseMessage'
+          description: ''
+components:
+  schemas:
+    BaseMessage:
+      type: object
+      description: Serializer پایه برای Message
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        text:
+          type: string
+          nullable: true
+        sender:
+          type: string
+          maxLength: 255
+        direction:
+          oneOf:
+          - $ref: '#/components/schemas/DirectionEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+        status:
+          $ref: '#/components/schemas/StatusEnum'
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        sent_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        service_type:
+          type: string
+          readOnly: true
+        service_icon:
+          type: string
+          readOnly: true
+        is_me:
+          type: string
+          readOnly: true
+        message_type:
+          $ref: '#/components/schemas/MessageTypeEnum'
+      required:
+      - created_at
+      - id
+      - is_me
+      - sent_at
+      - service_icon
+      - service_type
+      - updated_at
+    BaseMessageRequest:
+      type: object
+      description: Serializer پایه برای Message
+      properties:
+        text:
+          type: string
+          nullable: true
+        sender:
+          type: string
+          maxLength: 255
+        direction:
+          oneOf:
+          - $ref: '#/components/schemas/DirectionEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+        status:
+          $ref: '#/components/schemas/StatusEnum'
+        message_type:
+          $ref: '#/components/schemas/MessageTypeEnum'
+    BlankEnum:
+      enum:
+      - ''
+    Contact:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        avatar:
+          type: string
+        tags:
+          type: array
+          items:
+            $ref: '#/components/schemas/Tag'
+          nullable: true
+      required:
+      - avatar
+      - id
+      - name
+      - tags
+    Conversation:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        last_message:
+          allOf:
+          - $ref: '#/components/schemas/LastMessage'
+          readOnly: true
+        contact:
+          allOf:
+          - $ref: '#/components/schemas/Contact'
+          readOnly: true
+      required:
+      - contact
+      - id
+      - last_message
+    ConversationDetail:
+      type: object
+      properties:
+        messages:
+          type: array
+          items:
+            $ref: '#/components/schemas/Message'
+          readOnly: true
+      required:
+      - messages
+    DirectionEnum:
+      enum:
+      - in
+      - out
+      type: string
+      description: |-
+        * `in` - Inbound
+        * `out` - Outbound
+    EmailMessage:
+      type: object
+      description: ✅ Serializer برای EmailMessage
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        text:
+          type: string
+          nullable: true
+        sender:
+          type: string
+          maxLength: 255
+        direction:
+          oneOf:
+          - $ref: '#/components/schemas/DirectionEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+        status:
+          $ref: '#/components/schemas/StatusEnum'
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        sent_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        service_type:
+          type: string
+          readOnly: true
+        service_icon:
+          type: string
+          readOnly: true
+        is_me:
+          type: string
+          readOnly: true
+        message_type:
+          $ref: '#/components/schemas/MessageTypeEnum'
+        subject:
+          type: string
+        from_email:
+          type: string
+          format: email
+          maxLength: 254
+        to_email:
+          type: string
+          format: email
+          readOnly: true
+        cc_email: {}
+        bcc: {}
+        reply_to:
+          type: string
+          format: email
+          nullable: true
+          maxLength: 254
+        html_body:
+          type: string
+        has_attachments:
+          type: boolean
+          readOnly: true
+        labels:
+          readOnly: true
+        email_message_id:
+          type: string
+          readOnly: true
+          nullable: true
+        email_thread_id:
+          type: string
+          readOnly: true
+          nullable: true
+        service_account:
+          allOf:
+          - $ref: '#/components/schemas/EmailServiceAccount'
+          readOnly: true
+      required:
+      - created_at
+      - email_message_id
+      - email_thread_id
+      - from_email
+      - has_attachments
+      - html_body
+      - id
+      - is_me
+      - labels
+      - sent_at
+      - service_account
+      - service_icon
+      - service_type
+      - subject
+      - to_email
+      - updated_at
+    EmailMessageRequest:
+      type: object
+      description: ✅ Serializer برای EmailMessage
+      properties:
+        text:
+          type: string
+          nullable: true
+        sender:
+          type: string
+          maxLength: 255
+        direction:
+          oneOf:
+          - $ref: '#/components/schemas/DirectionEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+        status:
+          $ref: '#/components/schemas/StatusEnum'
+        message_type:
+          $ref: '#/components/schemas/MessageTypeEnum'
+        subject:
+          type: string
+          minLength: 1
+        from_email:
+          type: string
+          format: email
+          minLength: 1
+          maxLength: 254
+        cc_email: {}
+        bcc: {}
+        reply_to:
+          type: string
+          format: email
+          nullable: true
+          maxLength: 254
+        html_body:
+          type: string
+      required:
+      - from_email
+      - html_body
+      - subject
+    EmailServiceAccount:
+      type: object
+      properties:
+        id:
+          type: integer
+        type:
+          type: string
+        display_name:
+          type: string
+        email:
+          type: string
+        icon:
+          type: string
+      required:
+      - display_name
+      - email
+      - icon
+      - id
+      - type
+    LastMessage:
+      type: object
+      properties:
+        id:
+          type: integer
+        text:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        sender:
+          type: string
+        direction:
+          type: string
+        status:
+          type: string
+        service_type:
+          type: string
+          readOnly: true
+        service_icon:
+          type: string
+          readOnly: true
+      required:
+      - created_at
+      - direction
+      - id
+      - sender
+      - service_icon
+      - service_type
+      - status
+      - text
+    Message:
+      oneOf:
+      - $ref: '#/components/schemas/EmailMessage'
+      - $ref: '#/components/schemas/WhatsAppMessage'
+      - $ref: '#/components/schemas/BaseMessage'
+      discriminator:
+        propertyName: channel
+        mapping:
+          EmailMessage: '#/components/schemas/EmailMessage'
+          WhatsAppMessage: '#/components/schemas/WhatsAppMessage'
+          BaseMessage: '#/components/schemas/BaseMessage'
+    MessageTypeEnum:
+      enum:
+      - email
+      - whatsapp
+      - text
+      - image
+      - video
+      - audio
+      - document
+      - location
+      - contact
+      - template
+      type: string
+      description: |-
+        * `email` - Email
+        * `whatsapp` - WhatsApp
+        * `text` - Text
+        * `image` - Image
+        * `video` - Video
+        * `audio` - Audio
+        * `document` - Document
+        * `location` - Location
+        * `contact` - Contact
+        * `template` - Template
+    StatusEnum:
+      enum:
+      - pending
+      - sending
+      - sent
+      - delivered
+      - read
+      - failed
+      - received
+      type: string
+      description: |-
+        * `pending` - Pending
+        * `sending` - Sending
+        * `sent` - Sent
+        * `delivered` - Delivered
+        * `read` - Read
+        * `failed` - Failed
+        * `received` - Received
+    Tag:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        color:
+          type: string
+      required:
+      - color
+      - id
+      - name
+    WhatsAppMessage:
+      type: object
+      description: ✅ Serializer برای WhatsAppMessage
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        text:
+          type: string
+          nullable: true
+        sender:
+          type: string
+          maxLength: 255
+        direction:
+          oneOf:
+          - $ref: '#/components/schemas/DirectionEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+        status:
+          $ref: '#/components/schemas/StatusEnum'
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        sent_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        service_type:
+          type: string
+          readOnly: true
+        service_icon:
+          type: string
+          readOnly: true
+        is_me:
+          type: string
+          readOnly: true
+        message_type:
+          $ref: '#/components/schemas/MessageTypeEnum'
+        from_number:
+          type: string
+          maxLength: 20
+        to_number:
+          type: string
+          maxLength: 20
+        media_url:
+          type: string
+          format: uri
+          nullable: true
+          maxLength: 200
+        media_id:
+          type: string
+          nullable: true
+          maxLength: 200
+        mime_type:
+          type: string
+          nullable: true
+          maxLength: 100
+        caption:
+          type: string
+          nullable: true
+        template_name:
+          type: string
+          nullable: true
+          maxLength: 100
+        template_language:
+          type: string
+          nullable: true
+          maxLength: 10
+        template_parameters: {}
+        wa_message_id:
+          type: string
+          readOnly: true
+          nullable: true
+        wa_status:
+          type: string
+          readOnly: true
+          nullable: true
+        is_media:
+          type: boolean
+          readOnly: true
+        service_account:
+          type: string
+          readOnly: true
+      required:
+      - created_at
+      - from_number
+      - id
+      - is_me
+      - is_media
+      - sent_at
+      - service_account
+      - service_icon
+      - service_type
+      - to_number
+      - updated_at
+      - wa_message_id
+      - wa_status
+  securitySchemes:
+    jwtAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

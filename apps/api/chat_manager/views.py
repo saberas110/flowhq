@@ -2,10 +2,14 @@ import json
 import base64
 from django.contrib.auth import get_user_model
 from googleapiclient.discovery import build as google_build
+from rest_framework import viewsets
+from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
-
+from rest_framework.response import Response
+from drf_spectacular.utils import extend_schema
 from .models import Conversation, Message, GmailAccounts
-from .serializers import PolymorphicMessageSerializer
+from .serializers import BaseMessageSerializer, PolymorphicMessageSerializer, ConversationSerializer, ConversationDetailSerializer, \
+    EmailMessageSerializer, WhatsAppMessageSerializer
 from .email_service.gmail_service import setup_gmail_watch
 from chat_manager.celery_tasks.gmail_tasks import process_gmail_notifications
 from chat_manager.email_service.gmail_auth import get_email_auth_url
@@ -130,6 +134,55 @@ class ConversationView(APIView):
 
         print('=' * 90)
         return JsonResponse(srz_data.data, safe=False)
+
+
+
+
+
+class SchemaViewSet(viewsets.ViewSet):
+    """
+    ⚠️ فقط برای تولید schema - استفاده نمی‌شه!
+    """
+
+    @extend_schema(
+        responses={200: ConversationSerializer(many=True)},
+        description="لیست مکالمات"
+    )
+    @action(detail=False, methods=['get'])
+    def conversations(self, request):
+        """لیست مکالمات"""
+        serializer = ConversationSerializer(many=True)
+        return Response(serializer.data)
+
+    @extend_schema(
+        
+         responses={200: ConversationDetailSerializer(many=True)}
+    , description="مکالمه جزئی")
+    @action(detail=True, methods=['get'])
+    def conversatons_detail(self, request):
+        
+        """مکالمه جزئی"""
+        serializer = ConversationDetailSerializer(many=True)
+        return Response(serializer.data)
+
+
+    @extend_schema(
+    request=EmailMessageSerializer,  # ← این باعث میشه Request type بسازه
+    responses={200: EmailMessageSerializer}
+    ) 
+    @action(detail=False, methods=['post'])
+    def send_email(self, request):
+        pass
+
+
+
+    @extend_schema(
+        request=BaseMessageSerializer,
+        responses={200: BaseMessageSerializer}
+    )
+    @action(detail=False, methods=['post'])
+    def send_message(self, request):
+        pass
 
 
 

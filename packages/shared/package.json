@@ -9,24 +9,27 @@
     "./types": "./src/types/index.ts",
     "./dtos": "./src/dtos/index.ts",
     "./validators": "./src/validators/index.ts",
-    "./error": "./src/error/index.ts"
+    "./error": "./src/error/index.ts",
+    "./schema": "./src/fromSchema/index.ts"
   },
   "scripts": {
     "lint": "eslint . --max-warnings 0",
-    "check-types": "tsc --noEmit"
+    "check-types": "tsc --noEmit",
+    "generate-types": "npx openapi-typescript ../../apps/api/schema.yaml -o ./src/fromSchema/Schematypes.ts && node ./scripts/extract-schemas.js"
   },
   "devDependencies": {
     "@repo/eslint-config": "workspace:*",
     "@repo/typescript-config": "workspace:*",
     "@types/node": "^22.15.3",
     "eslint": "^9.34.0",
+    "openapi-typescript": "^7.10.1",
     "typescript": "5.9.2"
   },
   "peerDependencies": {
+    "@hookform/resolvers": "^5.2.2",
     "react": "*",
     "react-dom": "*",
-    "react-hook-form": "^7.67.0",
-    "@hookform/resolvers": "^5.2.2"
+    "react-hook-form": "^7.67.0"
   },
   "dependencies": {
     "zod": "^4.1.13"

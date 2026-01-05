@@ -18,6 +18,7 @@ import {
 import usePresenseSocket from "../../hooks/sockets/usePresenceSocket";
 import useChatSocket from "@/hooks/sockets/useChatSocket";
 import {MessageInput} from "@/components/chat/messageInput";
+import { TSendMessageParams } from "@flowhq/shared";
 
 const ChatInterface: React.FC = () => {
   const [selectedConversation, setSelectedConversation] = useState<number>(0);
@@ -29,7 +30,7 @@ const ChatInterface: React.FC = () => {
 
   console.log('chat_list', chatList);
 
-  const { messages, sendEmailMessage, isConnected } = useChatSocket(selectedConversation);
+  const { messages, isConnected } = useChatSocket(selectedConversation);
   console.log('messages', messages)
 
 
@@ -41,21 +42,6 @@ const ChatInterface: React.FC = () => {
 
 
 
-  const handleSendMessage =  async (messageData)=>{
-
-    console.log('messageData', messageData)
-
-    if (inputMessage?.trim()===null) return
-    console.log('sendMessage', )
-      await sendEmailMessage({
-      subject: "Test Email",
-      body: "Hello World",
-      to: "user@example.com",
-      from: "saberas367@gmail.com",
-      text: messageData?.text,
-
-    })
-  }
 
 
 
@@ -74,10 +60,9 @@ const ChatInterface: React.FC = () => {
   };
 
   return (
-<div className=" mx-auto px-4 sm:px-6 lg:px-8 py-8  ">
+<div className="h-full px-4 sm:px-6 lg:px-8 py-4 flex flex-col">
   <div
-    className="bg-white rounded-lg shadow-sm border overflow-hidden"
-    style={{ height: "calc(100vh - 50px)" }}
+    className="bg-white rounded-lg shadow-sm border overflow-hidden flex-1 min-h-0"
   >
     <div className="flex h-full">
       {/* Conversation List */}
@@ -134,7 +119,7 @@ const ChatInterface: React.FC = () => {
                     </span>
                   </div>
                   <div className="absolute -bottom-1 -right-1">
-                    {conv.last_message.service_icon}
+                    {conv.last_message?.service_icon}
                   </div>
                 </div>
                 <div className="flex-1 min-w-0">
@@ -143,27 +128,27 @@ const ChatInterface: React.FC = () => {
                       {conv.contact?.name}
                     </p>
                     <span className="text-xs text-gray-500 ml-2 flex-shrink-0">
-                      {conv.last_message.created_at}
+                      {conv.last_message?.created_at}
                     </span>
                   </div>
                   <p className="text-xs sm:text-sm text-gray-600 truncate mb-2">
-                    {conv.last_message.text}
+                    {conv.last_message?.text}
                   </p>
                   <div className="flex items-center justify-between">
                     <span
-                      className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(conv.last_message.status)}`}
+                      className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(conv.last_message?.status)}`}
                     >
-                      {conv.last_message.status === "resolved" && (
+                      {conv.last_message?.status === "resolved" && (
                         <CheckCircle className="h-3 w-3 mr-1" />
                       )}
-                      {conv.last_message.status === "escalated" && (
+                      {conv.last_message?.status === "escalated" && (
                         <AlertTriangle className="h-3 w-3 mr-1" />
                       )}
-                      {conv.last_message.status === "active" && (
+                      {conv.last_message?.status === "active" && (
                         <Clock className="h-3 w-3 mr-1" />
                       )}
                       <span className="hidden sm:inline">
-                        {conv.last_message.status}
+                        {conv.last_message?.status}
                       </span>
                     </span>
                   </div>
@@ -180,6 +165,8 @@ const ChatInterface: React.FC = () => {
           ${selectedConversation === null ? "hidden md:flex" : "flex"} 
           flex-1 
           flex-col
+          overflow-hidden
+          min-h-0
         `}
       >
         {/* Chat Header */}
@@ -267,7 +254,7 @@ const ChatInterface: React.FC = () => {
         </div>
 
         {/* Message Input */}
-        <MessageInput onSendMessage={handleSendMessage}
+        <MessageInput 
                       conversationId={selectedConversation?.toString()} />
 
       </div>

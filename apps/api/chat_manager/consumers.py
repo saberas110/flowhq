@@ -4,6 +4,8 @@ from channels.db import database_sync_to_async
 from channels.generic.websocket import AsyncWebsocketConsumer, AsyncJsonWebsocketConsumer
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
+from google.oauth2 import service_account
+
 
 from .exceptions import OrganizationValidationError
 from .serializers  import ConversationDetailSerializer
@@ -147,19 +149,21 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
     async def receive_json(self, data, **kwargs):
 
         print('start receive ', data)
-        message_type = data.get('type', None)
-        body_message = data.get('message', None)
+        message_type = data.get('message_type', None)
+        body_message = data.get('html_body', None)
 
         type_receive = {
             "chat_message": self.type_chat_message,
             "read_message": 'self.type_read_message',
             "email": self.type_send_email
         }
+
         if not self.conversation_id:
             self.conversation_id = await self._get_or_create_conversation_id(self.contact_user_id)
 
 
         handler = type_receive.get(message_type)
+        print('handler', handler)
         if not handler:
             return
         await handler(data)
@@ -179,6 +183,7 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
         msg = data.get('message')
         service_account_id = msg.get('service_account_id')
         service_account = await self.get_service_accounts(service_account_id)
+
         services = {
             "whatapp": Whatsapp,
             "gmail" : "Gmail",
@@ -186,16 +191,42 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
         handler = services.get(service_account.service_type)
         if not handler:
             return
+
         handler()
 
 
     async def type_send_email(self, data):
+        from chat_manager.celery_tasks.gmail_tasks import send_email_via_gmail_task
+        
+        print('start type send email', data)
 
-        msg_id = await self.create_message(data)
+        conversation = await self.get_conversation_query(self.conversation_id)
+        if conversation is None:
+            return []
+
+
+        if conversation.contact is not None:
+            channel_identity = conversation.contact.identites.get(channel='email')
+            to_email = channel_identity.external_id if channel_identity is not None else None
+        else:
+            to_email = conversation.contact_user_id
+
+
+        data['to_email'] = to_email
+        from_email = data.get('from_email')
+
+        service_account = await self.get_service_account_by_email(conversation.organization_id, from_email)
+        if service_account:
+            data['service_account_id'] = service_account.id
 
 
 
-        task_id = await send_email_via_gmail_task(message_id=msg_id)
+        msg = await self.create_message(data)
+
+        msg.service_account = service_account
+
+
+        task_id =  send_email_via_gmail_task.delay(message_id=msg.id)
 
 
 
@@ -214,14 +245,29 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
         }))
 
 
+
+    @database_sync_to_async
+    def get_conversation_query(self, conversation_id):
+        from .models import Conversation
+
+        conversation = (Conversation.objects.filter(id=conversation_id)
+        .optimized_for_detail().first())
+        
+        return conversation
+
+
+
     @database_sync_to_async
     def _get_old_messages(self, conversation_id):
         from .models import Conversation
         from .serializers import PolymorphicMessageSerializer
 
-        conversation = Conversation.objects.filter(id=conversation_id).optimized_for_detail().first()._cached_messages
-        print('conversation', conversation_id)
-        srz_data = PolymorphicMessageSerializer(conversation, many=True)
+        conversation = (Conversation.objects.filter(id=conversation_id)
+        .optimized_for_detail().first())
+        if conversation is None:
+            return []
+        messages = conversation._cached_messages
+        srz_data = PolymorphicMessageSerializer(messages, many=True)
         print('srz_data_old_message', srz_data.data)
         return srz_data.data
 
@@ -249,17 +295,13 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
     @database_sync_to_async
     def create_message(self,data):
         from .models import Message
-        from .serializers import MessageSerializer
         print('data', data)
         data['conversation_id'] = self.conversation_id
         temp_id = data.pop('temp_id')
-        print('temp_id', temp_id)
-        print('data',data )
         msg = Message.objects.create_from_data(data)
         print('msg', msg)
-        # srz_msg = MessageSerializer(msg, context={'user': '0910'})
 
-        return msg.id
+        return msg
 
 
     @database_sync_to_async
@@ -273,3 +315,13 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
             raise ServiceAccountValidationError(f"Service_account {service_account_id} Dose Not Exist")
 
 
+
+    @database_sync_to_async
+    def get_service_account_by_email(self, organization_id, email):
+        from chat_manager.models import ServiceAccount
+        
+        # Query parent model - returns correct subclass (GmailAccounts, WhatsAppAccount, etc.)
+        return ServiceAccount.objects.filter(
+            organization_id=organization_id,
+            is_active=True
+        ).first()

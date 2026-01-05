@@ -16,6 +16,14 @@
     "dev": {
       "cache": false,
       "persistent": true
+    },
+    "celery": {
+      "cache": false,
+      "persistent": true
+    },
+    "ngrok": {
+      "cache": false,
+      "persistent": true
     }
   }
 }
