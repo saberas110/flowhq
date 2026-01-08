@@ -150,6 +150,7 @@ class LoginUser(APIView):
 class UserStatus(APIView):
     permission_classes = [IsAuthenticated,]
     def get(self, request):
+        print('UserStatus')
         return Response({'UserStatus': 'Authenticated'}, status=status.HTTP_200_OK)
 
 

@@ -21,14 +21,13 @@ import {MessageInput} from "@/components/chat/messageInput";
 import { TSendMessageParams } from "@flowhq/shared";
 
 const ChatInterface: React.FC = () => {
-  const [selectedConversation, setSelectedConversation] = useState<number>(0);
+  const [selectedConversation, setSelectedConversation] = useState<number | null>(null);
   const [inputMessage, setInputMessage] = useState<string>("");
-  const { chatList } = usePresenseSocket();
+  const { chatList, channels } = usePresenseSocket();
+  console.log('channels', channels);
 
 
 
-
-  console.log('chat_list', chatList);
 
   const { messages, isConnected } = useChatSocket(selectedConversation);
   console.log('messages', messages)
@@ -173,9 +172,9 @@ const ChatInterface: React.FC = () => {
         <div className="p-3 sm:p-4 border-b border-gray-200 bg-gray-50">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              {/* Back Button - فقط موبایل */}
+              {/* Back Button - mobile only */}
               <button
-                onClick={() => setSelectedConversation(0)}
+                onClick={() => setSelectedConversation(null)}
                 className="md:hidden p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100"
               >
                 <ArrowLeft className="h-5 w-5" />
@@ -216,10 +215,10 @@ const ChatInterface: React.FC = () => {
           {messages.map((msg, index) => (
             <div
               key={index}
-              className={`flex ${msg.direction === "in" ? "justify-end" : "justify-start"}`}
+              className={`flex ${msg.direction === "out" ? "justify-end" : "justify-start"}`}
             >
               <div
-                className={`flex items-start space-x-2 max-w-[85%] sm:max-w-xs lg:max-w-md ${msg.direction === "in" ? "flex-row-reverse space-x-reverse" : ""}`}
+                className={`flex items-start space-x-2 max-w-[85%] sm:max-w-xs lg:max-w-md ${msg.direction === "out" ? "flex-row-reverse space-x-reverse" : ""}`}
               >
                 <div
                   className={`h-6 w-6 sm:h-8 sm:w-8 rounded-full flex items-center justify-center flex-shrink-0 ${
@@ -234,7 +233,7 @@ const ChatInterface: React.FC = () => {
                 </div>
                 <div
                   className={`rounded-lg px-3 py-2 sm:px-4 ${
-                    msg.direction === "in"
+                    msg.direction === "out"
                       ? "bg-blue-600 text-white"
                       : "bg-gray-100 text-gray-900"
                   }`}
@@ -243,7 +242,7 @@ const ChatInterface: React.FC = () => {
                     {msg.text}
                   </p>
                   <p
-                    className={`text-xs mt-1 ${msg.direction === "in" ? "text-blue-100" : "text-gray-500"}`}
+                    className={`text-xs mt-1 ${msg.direction === "out" ? "text-blue-100" : "text-gray-500"}`}
                   >
                     {msg.created_at}
                   </p>

@@ -8,9 +8,8 @@ export async function middleware(request: NextRequest) {
   const LOGIN_URL = new URL("/login", request.url);
   const cookie = request.headers.get("cookie");
 
-  const USER_STATUS_URL =
-    process.env.NEXT_PUBLIC_USER_STATUS_URL ||
-    "http://localhost:8000/api/accounts/userstatus";
+  // Middleware runs server-side, so always use internal Django URL
+  const USER_STATUS_URL = "http://127.0.0.1:8000/api/accounts/userstatus";
 
   console.log("=" * 60);
   console.log("🟦 [Next.js Middleware] Request to:", request.nextUrl.pathname);

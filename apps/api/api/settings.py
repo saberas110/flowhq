@@ -56,10 +56,10 @@ MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
-    'accounts.middleware.RefreshJWTMiddleware',
-    'accounts.middleware.AttachTokenMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
-    'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'django.contrib.auth.middleware.AuthenticationMiddleware',  # Django sets session user first
+    'accounts.middleware.RefreshJWTMiddleware',                 # Then we override with JWT user
+    'accounts.middleware.AttachTokenMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]

@@ -1,16 +1,19 @@
 'use client'
 import useWebSocket, {ReadyState} from "react-use-websocket";
 import {useChatContext} from "@/contexts/ChatContext";
-import { useEffect, useState} from "react";
-import { TMessage, TSocketMessages } from "@flowhq/shared";
+import { useEffect, useMemo } from "react";
+import { TMessage, TSocketChat } from "@flowhq/shared";
 import useSendMessage from "@/hooks/sockets/sendMessage";
+import { getChatSocketUrl } from "@/lib/getWebSocketUrl";
 
-export default function useChatSocket(conversation_id:number =0 ) {
+export default function useChatSocket(conversation_id: number | null = null) {
 
   const {messages, setMessages} = useChatContext()
-  const wsUrl: string |null = conversation_id
-     ? `${process.env.NEXT_PUBLIC_WS_CHAT_URL}/${conversation_id}/`!
-     : null
+  
+  // Auto-detect URL and add token for cross-domain (ngrok)
+  const wsUrl = useMemo(() => 
+    conversation_id ? getChatSocketUrl(conversation_id) : null
+  , [conversation_id]);
 
 
 
@@ -32,7 +35,7 @@ export default function useChatSocket(conversation_id:number =0 ) {
       console.log("⚠️ WebSocket Error:", event);
     },
   },
-  conversation_id !== 0
+  conversation_id !== null && conversation_id !== 0
   );
 
   const {sendEmailMessage } = useSendMessage({
@@ -46,12 +49,15 @@ useEffect(() => {
 
 
   if (!lastJsonMessage) return
-  const socketMessage = lastJsonMessage as TSocketMessages
+  const socketMessage = lastJsonMessage as TSocketChat
 
   switch (socketMessage.type){
 
     case "init_messages":
       handleInitMessages(socketMessage.messages)
+      break
+    case "new_message":
+      handleNewMessage(socketMessage.message)
   }
 
 
@@ -60,6 +66,12 @@ useEffect(() => {
 
 const handleInitMessages = (messages:TMessage[])=>{
   setMessages(messages);
+}
+
+const handleNewMessage = (message:TMessage)=>{
+  setMessages(prev=>(
+    [...prev, message]
+  ))
 }
 
 

@@ -1,10 +1,17 @@
 from unittest import getTestCaseNames
 from django.db.models import manager
-from drf_spectacular.utils import PolymorphicProxySerializer, extend_schema_field
+from drf_spectacular.utils import extend_schema_field, PolymorphicProxySerializer
 from pyasn1.type import tag
 from rest_framework import serializers
 
-from chat_manager.models import Conversation, ChannelIdentity, Message, WhatsAppMessage, EmailMessage
+from chat_manager.models import (
+    Conversation, ChannelIdentity, GmailAccounts, Message, 
+    ServiceAccount, WhatsAppAccount, WhatsAppMessage, EmailMessage,
+    SERVICE_ACCOUNT_TYPE_CHOICES
+)
+
+
+
 
 
 
@@ -41,31 +48,11 @@ class BaseMessageSerializer(serializers.ModelSerializer):
 
 
 
-class EmailServiceAccountSerializer(serializers.Serializer):
-    id = serializers.IntegerField()
-    type = serializers.CharField()  # 'email'
-    display_name = serializers.CharField()
-    email = serializers.CharField()
-    icon = serializers.CharField()
-
-
-class WhatsAppServiceAccountSerializer(serializers.Serializer):
-    id = serializers.IntegerField()
-    type = serializers.CharField()  # 'whatsapp'
-    display_name = serializers.CharField()
-    phone_number = serializers.CharField()
-    icon = serializers.CharField()
-
-
-
-
-
-
 class EmailMessageSerializer(BaseMessageSerializer):
     """
     ✅ Serializer برای EmailMessage
     """
-    service_account = serializers.SerializerMethodField()
+    service_account_id = serializers.IntegerField(write_only=True, required=True)
     html_body = serializers.CharField(required=True, allow_blank=True)
 
     class Meta(BaseMessageSerializer.Meta):
@@ -74,31 +61,15 @@ class EmailMessageSerializer(BaseMessageSerializer):
             'subject', 'from_email', 'to_email', 'cc_email', 'bcc',
             'reply_to', 'html_body', 'has_attachments', 'labels',
             'email_message_id', 'email_thread_id',
-            'service_account'
+            'service_account_id'
         ]
         read_only_fields = list(BaseMessageSerializer.Meta.read_only_fields) + [
             'has_attachments', 'labels',
-            'email_message_id', 'email_thread_id',
-            'service_account', 'to_email'
+            'email_message_id', 'email_thread_id', 'to_email'
         ]
 
-    @extend_schema_field(EmailServiceAccountSerializer)
-    def get_service_account(self, obj):
+    
 
-        """
-        ✅ اطلاعات ServiceAccount
-        """
-        if obj.service_account:
-            return {
-                'id': obj.service_account.id,
-                'type': 'email',
-                'display_name': obj.service_account.display_name,
-                'email': obj.service_account.email,
-                'icon': '📧'
-            }
-        return None
-
-@extend_schema_field(WhatsAppServiceAccountSerializer)
 class WhatsAppMessageSerializer(BaseMessageSerializer):
     """
     ✅ Serializer برای WhatsAppMessage
@@ -245,100 +216,17 @@ class ConversationDetailSerializer(serializers.ModelSerializer):
 
 
     def get_service_type(self, obj):
-        """
-            ✅ لیست ServiceAccount های موجود (برای dropdown ارسال پیام)
-            Format:
-            [
-                {class LastMessageSerializer(serializers.Serializer):
-    id = serializers.IntegerField()
-    text = serializers.CharField()
-    created_at = serializers.DateTimeField()
-    sender = serializers.CharField()
-    direction = serializers.CharField()
-    status = serializers.CharField()
-    service_type = serializers.CharField(source='get_service_type', read_only=True)
-    service_icon = serializers.CharField(source='get_service_icon', read_only=True)
-
-
-class TagSerializer(serializers.Serializer):
-    id = serializers.IntegerField()
-    name = serializers.CharField()
-    color = serializers.CharField()
-
-
-
-class ContactSerializer(serializers.Serializer):
-    id = serializers.IntegerField()
-    name = serializers.CharField()
-    avatar = serializers.CharField()
-    tags = TagSerializer(many=True, allow_null=True)
-
-
-
-
-
-class ConversationSerializer(serializers.ModelSerializer):
-    contact = serializers.SerializerMethodField()
-    last_message = serializers.SerializerMethodField()
-
-    class Meta:
-        model = Conversation
-        fields = ['id', 'last_message', 'contact']
-
-    @extend_schema_field(ContactSerializer)  # 👈 Add this decorator
-    def get_contact(self, obj):
-        if not obj.contact:
-            return {
-                'id': obj.contact_user_id,
-                'name': obj.contact_user_id ,
-                'avatar': '',
-                'tags': None
-            }
-
-        tags = getattr(obj.contact, '_cached_tags', None)
-        if tags is None:
-            tags = obj.contact.tags.all()
-
-        return {
-            'id': obj.contact.id,
-            'name': obj.contact.name or '',
-            'avatar': '',
-            'tags': [
-                {'id': tag.id, 'name': tag.name or '', 'color': tag.colort}
-                for tag in tags
-            ]
-        }
-    @extend_schema_field(LastMessageSerializer)  
-    def get_last_message(self, obj):
-        last_msg = obj.last_message
-        if not last_msg:
-             return None
-
-        return LastMessageSerializer(last_msg).data
-                    'id': 1,
-                    'type': 'email',
-                    'display_name': 'پشتیبانی',
-                    'icon': '📧',
-                    'channel': 'email',
-                    'external_id': 'support@company.com'
-                },
-            ]
-            """
+        
+         
         return obj.get_service_account()
 
-    # def get_contact(self, obj):
-    #     if obj.contact:
-    #         return obj.contact
-    #
-    #     return obj.contact_user_id if obj.contact_user_id else None
-
+ 
 
 
     @extend_schema_field(PolymorphicProxySerializer(
         component_name='Message',
-        serializers=[EmailMessageSerializer, 
-        WhatsAppMessageSerializer, BaseMessageSerializer],
-        resource_type_field_name='channel',
+        serializers=[EmailMessageSerializer, WhatsAppMessageSerializer, BaseMessageSerializer],
+        resource_type_field_name=None,
         many=True
     ))
     def get_messages(self, obj):
@@ -350,3 +238,68 @@ class ConversationSerializer(serializers.ModelSerializer):
         ).data
 
 
+
+
+
+# 1. Base serializer with shared fields
+class BaseServiceAccountSerializer(serializers.ModelSerializer):
+    service_type = serializers.SerializerMethodField()
+    icon = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = ServiceAccount
+        fields = ['id', 'service_type', 'display_name', 'icon']
+        read_only_fields = ['id', 'service_type']
+    
+    @extend_schema_field(serializers.ChoiceField(choices=SERVICE_ACCOUNT_TYPE_CHOICES))
+    def get_service_type(self, obj):
+
+        if obj.service_type:
+            return obj.service_type
+        types = {
+            'WhatsAppAccount': 'whatsapp',
+            'GmailAccounts': 'email'
+        }
+        return types.get(type(obj).__name__, 'service')
+    
+    def get_icon(self, obj):
+        return '📧' if hasattr(obj, 'email') else '💬'
+
+
+# 2. Email service account (inherits from Base)
+class EmailServiceAccountSerializer(BaseServiceAccountSerializer):
+    class Meta(BaseServiceAccountSerializer.Meta):
+        model = GmailAccounts  # Use the child model
+        fields = BaseServiceAccountSerializer.Meta.fields + ['email']
+
+
+# 3. WhatsApp service account (inherits from Base)
+class WhatsAppServiceAccountSerializer(BaseServiceAccountSerializer):
+    class Meta(BaseServiceAccountSerializer.Meta):
+        model = WhatsAppAccount  # Use the child model
+        fields = BaseServiceAccountSerializer.Meta.fields + ['phone_number']
+
+class PolymorphicServiceAccountSerializer(serializers.Serializer):
+    def to_representation(self, instance):
+        service_types = {
+            'GmailAccounts' : EmailServiceAccountSerializer,
+            'WhatsAppAccount' : WhatsAppServiceAccountSerializer,
+
+        }
+
+        class_name = type(instance).__name__
+        if class_name in service_types:
+            return service_types[class_name](instance, context = self.context).data
+
+        return BaseServiceAccountSerializer(instance, context = self.context).data
+
+
+ServiceAccountSchema = PolymorphicProxySerializer(
+    component_name = 'ServiceAccount',
+    serializers=[
+        EmailServiceAccountSerializer,
+        WhatsAppServiceAccountSerializer,
+        BaseServiceAccountSerializer,
+    ],
+    resource_type_field_name=None
+)

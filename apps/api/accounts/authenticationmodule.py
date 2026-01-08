@@ -1,8 +1,6 @@
 import os
 from datetime import timedelta
 
-from django.conf import settings
-
 from chat_manager.models import Organization
 
 
@@ -28,27 +26,32 @@ class HandleToken:
 
 
         refresh, access = self.create_token()
-        access_lifetime = timedelta(seconds=5)
-        refresh_lifetime = timedelta(days=1)
+        access_lifetime = timedelta(minutes=5)  # 5 minutes, not 5 seconds
+        refresh_lifetime = timedelta(days=7)
+
+        # For SameSite=Lax, cookies work with same-origin requests (via proxy)
+        samesite = os.getenv("SAMESITE", "Lax")
+        secure = os.getenv("SECURE") == "True"
+        domain = os.getenv("COOKIE_DOMAIN") or None
 
         self.response.set_cookie(
             key="access",
             value=access,
-            httponly=True,
-            secure=os.getenv("SECURE") == "True",
-            samesite=os.getenv("SAMESITE"),
-            path= '/',
-            domain=os.getenv("COOKIE_DOMAIN", None),
+            httponly=False,  # Allow JS to read for WebSocket cross-domain auth
+            secure=secure,
+            samesite=samesite,
+            path='/',
+            domain=domain,
             max_age=int(access_lifetime.total_seconds())
         )
         self.response.set_cookie(
             key="refresh",
             value=refresh,
-            httponly=True,
-            secure=os.getenv("SECURE") == "True",
-            samesite=os.getenv("SAMESITE"),
-            domain=os.getenv("COOKIE_DOMAIN", None),
+            httponly=True,  # Keep secure - not needed by JS
+            secure=secure,
+            samesite=samesite,
             path='/',
+            domain=domain,
             max_age=int(refresh_lifetime.total_seconds())
         )
         return self.response

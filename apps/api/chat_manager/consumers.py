@@ -35,12 +35,24 @@ class PresenceConsumer(AsyncJsonWebsocketConsumer):
         await self.accept()
 
         srz_conversations = await self._get_srz_conversations(self.user.id)
+        srz_channels = await self._get_srz_channels(self.user.id)
+
+        print('srz_channels', srz_channels)
+        
 
         await self.channel_layer.group_send(
             self.user_group_name,
             {
                 'type': 'chat.list',
-                'conversations': srz_conversations
+                'conversations': srz_conversations,
+            }
+        )
+
+        await self.channel_layer.group_send(
+            self.user_group_name,
+            {
+                'type': 'channels',
+                'channels': srz_channels,
             }
         )
 
@@ -54,6 +66,15 @@ class PresenceConsumer(AsyncJsonWebsocketConsumer):
                 await self.channel_layer.group_discard(self.group_name, self.channel_name)
             await self.close()
             return
+
+
+
+    async def channels(self, event):
+        print('event', event)
+        await self.send_json({
+            'type': 'channels',
+            'channels': event['channels']
+        })
 
 
 
@@ -88,6 +109,28 @@ class PresenceConsumer(AsyncJsonWebsocketConsumer):
         print('srz_data', srz_data.data)
         print('/' * 60)
         return srz_data.data
+
+
+
+    @database_sync_to_async
+    def _get_srz_channels(self, user_id):
+        from .models import Organization
+        from .serializers import PolymorphicServiceAccountSerializer
+
+        try:
+            organization = Organization.objects.get(owner=user_id)
+        except Organization.DoesNotExist:
+            raise OrganizationValidationError('for this user do not found any organization')
+
+        services = organization.services.all()
+        
+        if services is not None:
+            return PolymorphicServiceAccountSerializer(services, many=True).data
+        return []
+
+
+
+
 
 
 
@@ -211,19 +254,12 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
         else:
             to_email = conversation.contact_user_id
 
-
         data['to_email'] = to_email
-        from_email = data.get('from_email')
 
-        service_account = await self.get_service_account_by_email(conversation.organization_id, from_email)
-        if service_account:
-            data['service_account_id'] = service_account.id
-
-
-
+        data['text'] = data.get('html_body')
+        data['direction'] = 'out'
         msg = await self.create_message(data)
 
-        msg.service_account = service_account
 
 
         task_id =  send_email_via_gmail_task.delay(message_id=msg.id)
@@ -237,12 +273,20 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
 
 
     async def chat_message(self, event):
-        is_me = (self.user.id == event.get('message', None))
-        event['message']['is_me'] = is_me
+        # is_me = (self.user.id == event.get('message', None))
+        # event['message']['is_me'] = is_me
         await self.send(text_data=json.dumps({
             'type': 'chat_message',
             'message': event.get('message', None)
         }))
+
+
+    async def new_message(self, data):
+
+        await self.send_json({
+            'type': 'new_message',
+            'message': data.get('message', None)
+        })
 
 
 

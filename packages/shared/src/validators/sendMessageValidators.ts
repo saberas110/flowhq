@@ -13,6 +13,7 @@ export const sendEmailSchema = z.object({
     html_body: z.string().min(1),
     cc_email: z.string().email().optional(),
     bcc_email: z.string().email().optional(),
+    service_account_id: z.coerce.number().min(1),
 })
 
 export type TSendEmailSchema = z.infer<typeof sendEmailSchema>

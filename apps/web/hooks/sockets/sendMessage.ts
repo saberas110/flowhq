@@ -7,7 +7,7 @@ import { useChatContext } from "@/contexts/ChatContext";
 type TUseSendParams = {
   readyState: ReadyState;
   sendJsonMessage: (message: TSendMessageParams) => void;
-  conversation_id: number;
+  conversation_id: number | null;
 };
 
 export default function useSendMessage({
@@ -87,6 +87,7 @@ export default function useSendMessage({
 
 
         const sendEmail: TSendEmailMessage= {
+          service_account_id: params.service_account_id,
           temp_id: tempId,
           message_type: TMessageTypeEnum.EMAIL,
           text: params.text || "",

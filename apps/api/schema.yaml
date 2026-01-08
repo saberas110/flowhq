@@ -175,6 +175,22 @@ paths:
               schema:
                 $ref: '#/components/schemas/BaseMessage'
           description: ''
+  /api/chat/schema/service_accounts/:
+    get:
+      operationId: chat_schema_service_accounts_retrieve
+      description: ⚠️ فقط برای تولید schema - استفاده نمی‌شه!
+      tags:
+      - chat
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServiceAccount'
+          description: ''
 components:
   schemas:
     BaseMessage:
@@ -248,6 +264,26 @@ components:
           $ref: '#/components/schemas/StatusEnum'
         message_type:
           $ref: '#/components/schemas/MessageTypeEnum'
+    BaseServiceAccount:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        service_type:
+          allOf:
+          - $ref: '#/components/schemas/ServiceTypeEnum'
+          readOnly: true
+        display_name:
+          type: string
+          maxLength: 150
+        icon:
+          type: string
+          readOnly: true
+      required:
+      - icon
+      - id
+      - service_type
     BlankEnum:
       enum:
       - ''
@@ -383,10 +419,6 @@ components:
           type: string
           readOnly: true
           nullable: true
-        service_account:
-          allOf:
-          - $ref: '#/components/schemas/EmailServiceAccount'
-          readOnly: true
       required:
       - created_at
       - email_message_id
@@ -398,7 +430,6 @@ components:
       - is_me
       - labels
       - sent_at
-      - service_account
       - service_icon
       - service_type
       - subject
@@ -439,29 +470,39 @@ components:
           maxLength: 254
         html_body:
           type: string
+        service_account_id:
+          type: integer
+          writeOnly: true
       required:
       - from_email
       - html_body
+      - service_account_id
       - subject
     EmailServiceAccount:
       type: object
       properties:
         id:
           type: integer
-        type:
-          type: string
+          readOnly: true
+        service_type:
+          allOf:
+          - $ref: '#/components/schemas/ServiceTypeEnum'
+          readOnly: true
         display_name:
           type: string
-        email:
-          type: string
+          maxLength: 150
         icon:
           type: string
+          readOnly: true
+        email:
+          type: string
+          format: email
+          maxLength: 254
       required:
-      - display_name
       - email
       - icon
       - id
-      - type
+      - service_type
     LastMessage:
       type: object
       properties:
@@ -498,12 +539,6 @@ components:
       - $ref: '#/components/schemas/EmailMessage'
       - $ref: '#/components/schemas/WhatsAppMessage'
       - $ref: '#/components/schemas/BaseMessage'
-      discriminator:
-        propertyName: channel
-        mapping:
-          EmailMessage: '#/components/schemas/EmailMessage'
-          WhatsAppMessage: '#/components/schemas/WhatsAppMessage'
-          BaseMessage: '#/components/schemas/BaseMessage'
     MessageTypeEnum:
       enum:
       - email
@@ -528,6 +563,19 @@ components:
         * `location` - Location
         * `contact` - Contact
         * `template` - Template
+    ServiceAccount:
+      oneOf:
+      - $ref: '#/components/schemas/EmailServiceAccount'
+      - $ref: '#/components/schemas/WhatsAppServiceAccount'
+      - $ref: '#/components/schemas/BaseServiceAccount'
+    ServiceTypeEnum:
+      enum:
+      - email
+      - whatsapp
+      type: string
+      description: |-
+        * `email` - Email
+        * `whatsapp` - WhatsApp
     StatusEnum:
       enum:
       - pending
@@ -663,6 +711,30 @@ components:
       - updated_at
       - wa_message_id
       - wa_status
+    WhatsAppServiceAccount:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        service_type:
+          allOf:
+          - $ref: '#/components/schemas/ServiceTypeEnum'
+          readOnly: true
+        display_name:
+          type: string
+          maxLength: 150
+        icon:
+          type: string
+          readOnly: true
+        phone_number:
+          type: string
+          maxLength: 20
+      required:
+      - icon
+      - id
+      - phone_number
+      - service_type
   securitySchemes:
     jwtAuth:
       type: http

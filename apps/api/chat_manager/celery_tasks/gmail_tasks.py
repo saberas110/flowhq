@@ -142,14 +142,14 @@ def send_email_via_gmail_task(message_id):
             message.save(update_fields=['status', 'error_message'])
 
         # اطلاع‌رسانی WebSocket
-        channel_layer = get_channel_layer()
-        async_to_sync(channel_layer.group_send)(
-            f'chat_{message.conversation_id}',
-            {
-                'type': 'email.status',
-                'message': PolymorphicMessageSerializer(message).data
-            }
-        )
+        # channel_layer = get_channel_layer()
+        # async_to_sync(channel_layer.group_send)(
+        #     f'chat_{message.conversation_id}',
+        #     {
+        #         'type': 'email.status',
+        #         'message': PolymorphicMessageSerializer(message).data
+        #     }
+        # )
 
     except EmailMessage.DoesNotExist:
         logger.error(f"EmailMessage not found: {message_id}")

@@ -12,25 +12,30 @@ User = get_user_model()
 
 
 def _get_token_from_scope(scope, cookie_name='access'):
+    # First try to get from cookies
     headers = dict(scope.get("headers", []))
     cookie_header = headers.get(b"cookie", b"").decode()
-    print('cookie_header',cookie_header)
+    print('cookie_header', cookie_header)
+    
     for pair in cookie_header.split("; "):
-        # print('pair',pair)
-        if "=" in pair :
+        if "=" in pair:
             k, v = pair.split("=", 1)
-            # print(f'{k}={v}')
-            if k==cookie_name:
-                print('v_cookie_name',v)
+            if k == cookie_name:
+                print(f'✅ Token from cookie: {v[:20]}...')
                 return v
-        # qs = scope.get("query_string", b"").decode()
-        # if qs:
-        #     params = parse_qs(qs)
-        #     token_list = params.get("token") or params.get("access")
-        #     print('token_list', token_list)
-        #     if token_list:
-        #         return token_list[0]
-        # return None
+    
+    # If no cookie, try query string (for cross-domain WebSocket)
+    qs = scope.get("query_string", b"").decode()
+    if qs:
+        params = parse_qs(qs)
+        token_list = params.get("token") or params.get(cookie_name)
+        print('query_string params:', params.keys())
+        if token_list:
+            print(f'✅ Token from query string: {token_list[0][:20]}...')
+            return token_list[0]
+    
+    print('❌ No token found in cookie or query string')
+    return None
 
 
 @sync_to_async

@@ -9,7 +9,7 @@ from rest_framework.response import Response
 from drf_spectacular.utils import extend_schema
 from .models import Conversation, Message, GmailAccounts
 from .serializers import BaseMessageSerializer, PolymorphicMessageSerializer, ConversationSerializer, ConversationDetailSerializer, \
-    EmailMessageSerializer, WhatsAppMessageSerializer
+    EmailMessageSerializer, ServiceAccountSchema, WhatsAppMessageSerializer
 from .email_service.gmail_service import setup_gmail_watch
 from chat_manager.celery_tasks.gmail_tasks import process_gmail_notifications
 from chat_manager.email_service.gmail_auth import get_email_auth_url
@@ -25,12 +25,16 @@ from django.utils.decorators import method_decorator
 
 User = get_user_model()
 
-
+@method_decorator(csrf_exempt, name='dispatch')
 class GmailAuthStartView(View):
     def get(self, request):
         user = request.user
+        
+        # Check if user is authenticated
+        if not user.is_authenticated:
+            return JsonResponse({'error': 'Not authenticated. Please login first.'}, status=401)
+        
         auth_url, state = get_email_auth_url(user.id)
-
         request.session['email_auth_state'] = state
 
         return redirect(auth_url)
@@ -184,5 +188,12 @@ class SchemaViewSet(viewsets.ViewSet):
     def send_message(self, request):
         pass
 
+
+    
+
+    @extend_schema(responses={200: ServiceAccountSchema})
+    @action(detail=False, methods=['get'])
+    def service_accounts(self, request):
+        pass
 
 

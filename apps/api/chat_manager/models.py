@@ -40,24 +40,34 @@ class Organization(models.Model):
         return self.name
 
 
+# Choices for service account type (generates TypeScript enum)
+SERVICE_ACCOUNT_TYPE_CHOICES = [
+    ('email', 'Email'),
+    ('whatsapp', 'WhatsApp'),
+]
+
+
 class ServiceAccount(PolymorphicModel, CreatedAtMixin):
     organization = models.ForeignKey(Organization, models.CASCADE, related_name='services')
     display_name = models.CharField(max_length=150, blank=True)
     webhook_url = models.URLField(blank=True)
     token_expired_at = models.DateTimeField(null=True, blank=True)
     is_active = models.BooleanField(default=True)
+    service_type = models.CharField(max_length=20, choices=SERVICE_ACCOUNT_TYPE_CHOICES, blank=True)
 
 
     def __str__(self):
         return f'{self.__class__.__name__} {self.organization.name}'
 
-    def get_service_type(self):
-        types = {
-            'WhatsAppAccount': 'WhatsApp',
-            'GmailAccounts': 'Gmail'
-        }
-        class_name = type(self).__name__
-        return types.get(class_name, 'Service')
+    def save(self, *args, **kwargs):
+        # Auto-set service_type based on child class
+        if not self.service_type:
+            types = {
+                'WhatsAppAccount': 'whatsapp',
+                'GmailAccounts': 'email'
+            }
+            self.service_type = types.get(type(self).__name__, '')
+        super().save(*args, **kwargs)
 
 
 

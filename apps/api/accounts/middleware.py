@@ -25,6 +25,9 @@ class RefreshJWTMiddleware:
         print(f"   Path: {request.path}")
         print(f"   Cookies: {list(request.COOKIES.keys())}")
         print("=" * 60)
+        
+        if request.path.startswith('/admin/'):
+            return self.get_response(request)
 
         access = request.COOKIES.get('access')
         refresh = request.COOKIES.get('refresh')
@@ -75,7 +78,7 @@ class RefreshJWTMiddleware:
             response.set_cookie(
                 key="access",
                 value=new_access,
-                httponly=True,
+                httponly=False,  # Allow JS to read for WebSocket cross-domain auth
                 secure=os.getenv("SECURE") == "True",
                 samesite=os.getenv("SAMESITE", "Lax"),
                 domain=os.getenv("COOKIE_DOMAIN", None),

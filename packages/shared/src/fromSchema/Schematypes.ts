@@ -21,6 +21,11 @@ export enum TMessageTypeEnum {
   TEMPLATE = "template"
 }
 
+export enum TServiceTypeEnum {
+  EMAIL = "email",
+  WHATSAPP = "whatsapp"
+}
+
 export enum TStatusEnum {
   PENDING = "pending",
   SENDING = "sending",
@@ -55,6 +60,13 @@ export type TBaseMessageRequest = {
   direction?: TDirectionEnum | TBlankEnum;
   status?: TStatusEnum;
   message_type?: TMessageTypeEnum;
+};
+
+export type TBaseServiceAccount = {
+  readonly id: number;
+  readonly service_type: TServiceTypeEnum;
+  display_name?: string;
+  readonly icon: string;
 };
 
 export type TBlankEnum = "";
@@ -106,7 +118,6 @@ export type TEmailMessage = {
   readonly labels: unknown;
   readonly email_message_id: string | null;
   readonly email_thread_id: string | null;
-  readonly service_account: TEmailServiceAccount;
 };
 
 export type TEmailMessageRequest = {
@@ -123,14 +134,16 @@ export type TEmailMessageRequest = {
   /** Format: email */
   reply_to?: string | null;
   html_body: string;
+  service_account_id: number;
 };
 
 export type TEmailServiceAccount = {
-  id: number;
-  type: string;
-  display_name: string;
+  readonly id: number;
+  readonly service_type: TServiceTypeEnum;
+  display_name?: string;
+  readonly icon: string;
+  /** Format: email */
   email: string;
-  icon: string;
 };
 
 export type TLastMessage = {
@@ -146,6 +159,8 @@ export type TLastMessage = {
 };
 
 export type TMessage = TEmailMessage | TWhatsAppMessage | TBaseMessage;
+
+export type TServiceAccount = TEmailServiceAccount | TWhatsAppServiceAccount | TBaseServiceAccount;
 
 export type TTag = {
   id: number;
@@ -183,5 +198,13 @@ export type TWhatsAppMessage = {
   readonly wa_status: string | null;
   readonly is_media: boolean;
   readonly service_account: string;
+};
+
+export type TWhatsAppServiceAccount = {
+  readonly id: number;
+  readonly service_type: TServiceTypeEnum;
+  display_name?: string;
+  readonly icon: string;
+  phone_number: string;
 };
 

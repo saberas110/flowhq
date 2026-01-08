@@ -349,10 +349,10 @@ def _save_received_email(email_account, email_data):
     try:
         if organization_email == _from:
             contact_email = _to
-            direction = 'in'
+            direction = 'out'
         elif organization_email == _to:
             contact_email = _from
-            direction = 'out'
+            direction = 'in'
     except Exception as e:
         raise ValidationError(str(e))
 
@@ -382,13 +382,13 @@ def _save_received_email(email_account, email_data):
 
     channel_layer = get_channel_layer()
 
-    # async_to_sync(channel_layer.group_send)(
-    #     f'chat_{conversation.id}',
-    #     {
-    #         'type': 'chat.message',
-    #         'message': MessageSerializer(message).data,
-    #     }
-    # )
+    async_to_sync(channel_layer.group_send)(
+        f'chat_{conversation.id}',
+        {
+            'type': 'new_message',
+            'message': MessageSerializer(message).data,
+        }
+    )
 
     # for owner in conversation.organization.owner.all():
     #     async_to_sync(channel_layer.group_send)(

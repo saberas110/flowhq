@@ -24,19 +24,12 @@ import {
   Wand2,
   GripHorizontal,
 } from 'lucide-react'
-import { sendEmailResolver, TEmailMessageRequest, TSendEmailMessage, TSendMessageParams } from '@flowhq/shared'
+import { sendEmailResolver, TEmailMessageRequest, TSendEmailMessage, TSendMessageParams, TServiceAccount, TServiceTypeEnum } from '@flowhq/shared'
 import { useForm } from 'react-hook-form'
 import useChatSocket from '@/hooks/sockets/useChatSocket'
+import { useChatContext } from '@/contexts/ChatContext'
 
-// Types
-interface Channel {
-  id: string
-  name: string
-  type: 'email' | 'telegram' | 'whatsapp'
-  icon: any
-  email?: string
-  hasAdvancedInput: boolean
-}
+
 
 interface MessageInputProps {
   conversationId: number
@@ -46,18 +39,20 @@ interface MessageInputProps {
 
 export function MessageInput({ conversationId }: MessageInputProps) {
   // Channel states
-  const [selectedChannel, setSelectedChannel] = useState<Channel | null>(null)
+  const [selectedChannel, setSelectedChannel] = useState<TServiceAccount | null>(null)
   const [showChannelDropdown, setShowChannelDropdown] = useState(false)
   const [showCC, setShowCC] = useState(false)
   const [showBCC, setShowBCC] = useState(false)
   const { sendEmailMessage } = useChatSocket(conversationId);
   const [messageText, setMessageText] = useState<string>("")
+  const { channels } = useChatContext()
 
 
   const {
     register,
     handleSubmit,
     setValue,
+    reset,
     formState: { errors }
 
   } = useForm({ resolver: sendEmailResolver })
@@ -65,6 +60,7 @@ export function MessageInput({ conversationId }: MessageInputProps) {
 
 
 
+console.log('log error', errors);
 
 
 
@@ -81,54 +77,10 @@ export function MessageInput({ conversationId }: MessageInputProps) {
   })
 
   // داده‌های فرضی چنل‌ها
-  const channels: Channel[] = [
-    {
-      id: '1',
-      name: 'Gmail - Personal',
-      type: 'email',
-      icon: Mail,
-      email: 'saberas110@gmail.com',
-      hasAdvancedInput: true
-    },
-    {
-      id: '2',
-      name: 'Outlook - Work',
-      type: 'email',
-      icon: Mail,
-      email: 'work@company.com',
-      hasAdvancedInput: true
-    },
-    {
-      id: '3',
-      name: 'WhatsApp Business',
-      type: 'whatsapp',
-      icon: MessageCircle,
-      hasAdvancedInput: false
-    },
-    {
-      id: '4',
-      name: 'Telegram Bot',
-      type: 'telegram',
-      icon: Send,
-      hasAdvancedInput: false
-    }
-  ]
+  
 
+  // Load saved height (only once)
   useEffect(() => {
-    // Load last selected channel
-    const savedChannelId = localStorage.getItem('lastSelectedChannel')
-    if (savedChannelId) {
-      const channel = channels.find(c => c.id === savedChannelId)
-      if (channel) {
-        setSelectedChannel(channel)
-      } else {
-        setSelectedChannel(channels[0])
-      }
-    } else {
-      setSelectedChannel(channels[0])
-    }
-
-    // Load saved height
     const savedHeight = localStorage.getItem('emailBodyHeight')
     if (savedHeight) {
       const height = parseInt(savedHeight)
@@ -138,10 +90,24 @@ export function MessageInput({ conversationId }: MessageInputProps) {
     }
   }, [])
 
+  // Set selected channel when channels load
+  useEffect(() => {
+    if (channels.length === 0) return  // Wait for channels
+    if (selectedChannel) return  // Already selected
+
+    const savedChannelId = parseInt(localStorage.getItem('lastSelectedChannel') || '0')
+    if (savedChannelId) {
+      const channel = channels.find(c => c.id === savedChannelId)
+      setSelectedChannel(channel || channels[0])
+    } else {
+      setSelectedChannel(channels[0])
+    }
+  }, [channels, selectedChannel])
+
 
   useEffect(() => {
-    if (selectedChannel?.email) {
-      setValue('from_email', selectedChannel.email)
+    if (selectedChannel && 'email' in selectedChannel) {
+      setValue('from_email', selectedChannel.email as string)
     }
   }, [selectedChannel, setValue])
 
@@ -165,13 +131,14 @@ export function MessageInput({ conversationId }: MessageInputProps) {
   }, [emailBodyHeight, isResizing])
 
   // Handle channel selection
-  const handleChannelSelect = (channel: Channel) => {
+  const handleChannelSelect = (channel: TServiceAccount) => {
     setSelectedChannel(channel)
+    setValue('service_account_id', channel.id)
     setShowChannelDropdown(false)
-    localStorage.setItem('lastSelectedChannel', channel.id)
+    localStorage.setItem('lastSelectedChannel', channel.id.toString())
 
     // Reset fields when switching
-    if (!channel.hasAdvancedInput) {
+    if (channel.service_type !== TServiceTypeEnum.EMAIL) {
       setShowCC(false)
       setShowBCC(false)
 
@@ -254,7 +221,7 @@ export function MessageInput({ conversationId }: MessageInputProps) {
 
   // Handle send message
   const handleSend = async (data?: TEmailMessageRequest) => {
-    if (selectedChannel?.hasAdvancedInput) {
+    if (selectedChannel?.service_type === TServiceTypeEnum.EMAIL) {
       // Email data
 
 
@@ -264,11 +231,13 @@ export function MessageInput({ conversationId }: MessageInputProps) {
       await sendEmailMessage(data as TEmailMessageRequest)
 
 
-      console.log('after send mail', data);
-
-
-
-
+      // Reset form after send
+      reset({
+        subject: '',
+        html_body: '',
+        cc_email: '',
+        bcc_email: '',
+      })
 
       setShowCC(false)
       setShowBCC(false)
@@ -291,7 +260,12 @@ export function MessageInput({ conversationId }: MessageInputProps) {
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
-      handleSend()
+      if (selectedChannel?.service_type === TServiceTypeEnum.EMAIL) {
+        // Trigger form submission for email
+        handleSubmit(handleSend)()
+      } else {
+        handleSend()
+      }
     }
   }
 
@@ -312,12 +286,13 @@ export function MessageInput({ conversationId }: MessageInputProps) {
 
   return (
     <div className="border-t border-gray-200">
-      {selectedChannel.hasAdvancedInput ? (
+      {selectedChannel.service_type === TServiceTypeEnum.EMAIL ? (
         // ============================================
         // EMAIL ADVANCED INPUT
         // ============================================
         <form onSubmit={handleSubmit(handleSend)}>
           <input type="hidden" {...register('from_email')} />
+          <input type="hidden" {...register('service_account_id')} />
 
           <div className="p-4 space-y-3">
             {/* Channel Selector */}
@@ -326,9 +301,9 @@ export function MessageInput({ conversationId }: MessageInputProps) {
                 onClick={() => setShowChannelDropdown(!showChannelDropdown)}
                 className="flex items-center gap-2 text-sm text-gray-700 hover:text-gray-900 transition-colors"
               >
-                <selectedChannel.icon className="h-4 w-4" />
-                <span className="font-medium">{selectedChannel.name}</span>
-                {selectedChannel.email && (
+                <span className="h-4 w-4">{selectedChannel.icon}</span>
+                <span className="font-medium">{selectedChannel.display_name}</span>
+                {'email' in selectedChannel && (
                   <span className="text-gray-500 text-xs hidden sm:inline">
                     - to: {selectedChannel.email}
                   </span>
@@ -347,12 +322,12 @@ export function MessageInput({ conversationId }: MessageInputProps) {
                         className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors ${selectedChannel.id === channel.id ? 'bg-blue-50' : ''
                           }`}
                       >
-                        <channel.icon className="h-4 w-4 text-gray-600 flex-shrink-0" />
+                        <span className="h-4 w-4 text-gray-600 flex-shrink-0">{channel.icon}</span>
                         <div className="flex-1 text-left min-w-0">
                           <p className="text-sm font-medium text-gray-900 truncate">
-                            {channel.name}
+                            {channel.display_name}
                           </p>
-                          {channel.email && (
+                          {'email' in channel && (
                             <p className="text-xs text-gray-500 truncate">{channel.email}</p>
                           )}
                         </div>
@@ -552,8 +527,8 @@ export function MessageInput({ conversationId }: MessageInputProps) {
               onClick={() => setShowChannelDropdown(!showChannelDropdown)}
               className="flex items-center gap-2 text-sm text-gray-700 hover:text-gray-900 transition-colors"
             >
-              <selectedChannel.icon className="h-4 w-4" />
-              <span className="font-medium">{selectedChannel.name}</span>
+              <span className="h-4 w-4">{selectedChannel.icon}</span>
+              <span className="font-medium">{selectedChannel.display_name}</span>
               <ChevronDown className={`h-4 w-4 text-gray-400 transition-transform ${showChannelDropdown ? 'rotate-180' : ''}`} />
             </button>
 
@@ -568,12 +543,12 @@ export function MessageInput({ conversationId }: MessageInputProps) {
                       className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors ${selectedChannel.id === channel.id ? 'bg-blue-50' : ''
                         }`}
                     >
-                      <channel.icon className="h-4 w-4 text-gray-600 flex-shrink-0" />
+                      <span className="h-4 w-4 text-gray-600 flex-shrink-0">{channel.icon}</span>
                       <div className="flex-1 text-left min-w-0">
                         <p className="text-sm font-medium text-gray-900 truncate">
-                          {channel.name}
+                          {channel.display_name}
                         </p>
-                        {channel.email && (
+                        {'email' in channel && (
                           <p className="text-xs text-gray-500 truncate">{channel.email}</p>
                         )}
                       </div>
