@@ -1,8 +1,9 @@
 {
     "name": "api",
     "scripts": {
-        "dev": "bash -c 'source .venv/bin/activate && pnpm ngrok'",
+        "dev": "bash -c 'source .venv/bin/activate && pnpm tunnel'",
         "celery": "bash -c 'source .venv/bin/activate && celery -A api worker -l info'",
+        "tunnel": "npx localtunnel --port 8000 --subdomain flowhq-saber-2026",
         "ngrok": "ngrok http 8000",
         "schema": "bash -c 'source .venv/bin/activate && python manage.py spectacular --file schema.yaml --validate'",
         "build": ""

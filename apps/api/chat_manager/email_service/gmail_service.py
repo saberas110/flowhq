@@ -1,22 +1,61 @@
 import base64
+from email.mime.multipart import MIMEMultipart
+import imaplib
 import logging
+import smtplib
 import traceback
 from datetime import datetime
 from urllib.error import HTTPError
-
+import email as email_lib
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 from channels.layers import get_channel_layer
 from email.mime.text import MIMEText
 from os import getenv
 from asgiref.sync import async_to_sync
-from chat_manager.models import Conversation, Message, EmailMessage
-from chat_manager.serializers import MessageSerializer, ConversationSerializer
+from chat_manager.email_service.gmail_auth import get_email_account
+from chat_manager.models import Conversation, EmailMessage
+from chat_manager.serializers import MessageSerializer
 
 logger = logging.getLogger(__name__)
 
 
-from chat_manager.email_service.gmail_auth import get_email_account
+def _parse_email_message(msg, email_id):
+    """Parse email into dict"""
+    from email.header import decode_header
+    
+    subject, encoding = decode_header(msg.get('Subject', ''))[0]
+    if isinstance(subject, bytes):
+        subject = subject.decode(encoding or 'utf-8', errors='ignore')
+    
+    body = ''
+    html_body = ''
+    
+    if msg.is_multipart():
+        for part in msg.walk():
+            content_type = part.get_content_type()
+            payload = part.get_payload(decode=True)
+            if payload:
+                if content_type == 'text/plain':
+                    body = payload.decode('utf-8', errors='ignore')
+                elif content_type == 'text/html':
+                    html_body = payload.decode('utf-8', errors='ignore')
+    else:
+        payload = msg.get_payload(decode=True)
+        if payload:
+            body = payload.decode('utf-8', errors='ignore')
+    
+    return {
+        'id': email_id.decode() if isinstance(email_id, bytes) else email_id,
+        'subject': subject,
+        'from': msg.get('From'),
+        'to': msg.get('To'),
+        'date': msg.get('Date'),
+        'body': body,
+        'html_body': html_body,
+        'message_id': msg.get('Message-ID'),
+        'in_reply_to': msg.get('In-Reply-To'),
+    }
 
 
 def parse_gmail_message(message):
@@ -116,7 +155,6 @@ def parse_gmail_message(message):
 
 
 def setup_gmail_watch(email_account):
-
     service = get_email_account(email_account)
     print("getenvGMAIL_PUBSUB_TOPIC", getenv("GMAIL_PUBSUB_TOPIC"))
     request_body = {
@@ -154,7 +192,7 @@ def setup_gmail_watch(email_account):
         raise
 
 
-def send_emil_via_gmail(email_account, to, subject, body):
+def send_emil_via_gmail(email_account, to, subject, body, cc=None, bcc=None):
     service = get_email_account(email_account)
     message = MIMEText(body, 'html')
     message['to'] = to
@@ -172,6 +210,63 @@ def send_emil_via_gmail(email_account, to, subject, body):
         return sent_message['id'], None
     except Exception as e:
         return None, str(e)
+
+
+
+def _send_via_smtp(email_account, to, subject, body, cc=None, bcc=None):
+    """
+    Send email using SMTP - works with any provider
+    (Gmail, Outlook, Yahoo, custom SMTP servers)
+    """
+   
+
+    try:
+        # Build message
+        msg = MIMEMultipart('alternative')
+        msg['From'] = email_account.email
+        msg['To'] = to
+        msg['Subject'] = subject
+        
+        if cc:
+            cc_list = cc if isinstance(cc, list) else [cc]
+            msg['Cc'] = ', '.join(cc_list)
+        
+        msg.attach(MIMEText(body, 'html'))
+
+        # Connect based on encryption type (field has typo: smtp_encription)
+        if email_account.smtp_encription == 'ssl':
+            server = smtplib.SMTP_SSL(email_account.smtp_host, email_account.smtp_port)
+        else:
+            server = smtplib.SMTP(email_account.smtp_host, email_account.smtp_port)
+            if email_account.smtp_encription == 'tls':
+                server.starttls()
+
+        # Login and send
+        server.login(email_account.email, email_account.app_password)
+
+        recipients = [to]
+        if cc:
+            recipients.extend(cc if isinstance(cc, list) else [cc])
+        if bcc:
+            recipients.extend(bcc if isinstance(bcc, list) else [bcc])
+
+        server.sendmail(email_account.email, recipients, msg.as_string())
+        server.quit()
+
+        logger.info(f"✅ SMTP email sent to {to}")
+        return {'success': True, 'message_id': msg['Message-ID']}
+
+    except smtplib.SMTPAuthenticationError as e:
+        logger.error(f"❌ SMTP Auth Error: {e}")
+        return {'success': False, 'error': f'Authentication failed: {str(e)}'}
+    except smtplib.SMTPException as e:
+        logger.error(f"❌ SMTP Error: {e}")
+        return {'success': False, 'error': str(e)}
+    except Exception as e:
+        logger.error(f"❌ Error sending SMTP: {e}")
+        return {'success': False, 'error': str(e)}
+
+
 
 
 def fetch_email_by_id(email_account, message_id):
@@ -206,14 +301,52 @@ def fetch_email_by_id(email_account, message_id):
         return None
 
 
-# chat_manager/email_service/gmail_service.py
+
+
+def _fetch_via_imap(account, folder='INBOX', limit=50, since_date=None):
+    """Helper function - fetch emails via IMAP"""
+    
+    # Connect
+    if account.imap_encription == 'ssl':
+        mail = imaplib.IMAP4_SSL(account.imap_host, account.imap_port)
+    else:
+        mail = imaplib.IMAP4(account.imap_host, account.imap_port)
+        if account.imap_encription == 'tls':
+            mail.starttls()
+    
+    try:
+        mail.login(account.email, account.app_password)
+        mail.select(folder)
+        
+        # Search
+        if since_date:
+            search_criteria = f'SINCE {since_date.strftime("%d-%b-%Y")}'
+        else:
+            search_criteria = 'ALL'
+        
+        status, messages = mail.search(None, search_criteria)
+        email_ids = messages[0].split()[-limit:]
+        
+        # Fetch each email
+        emails = []
+        for email_id in email_ids:
+            status, msg_data = mail.fetch(email_id, '(RFC822)')
+            
+            for response_part in msg_data:
+                if isinstance(response_part, tuple):
+                    msg = email_lib.message_from_bytes(response_part[1])
+                    emails.append(_parse_email_message(msg, email_id))
+        
+        return emails
+    finally:
+        mail.logout()
 
 def get_history(email_account, start_history_id):
     """
     دریافت تغییرات history از Gmail
 
     Args:
-        email_account: GmailAccounts instance
+        email_account: EmailAccounts instance
         start_history_id: History ID برای شروع
 
     Returns:
@@ -224,7 +357,7 @@ def get_history(email_account, start_history_id):
 
         saved_history_id = email_account.history_id
 
-        logger.info(f"📥 Getting history changes")
+        logger.info("📥 Getting history changes")
         logger.info(f"   Notification History ID: {start_history_id}")
         logger.info(f"   Saved History ID: {saved_history_id}")
 

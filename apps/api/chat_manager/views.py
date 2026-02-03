@@ -7,9 +7,9 @@ from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from drf_spectacular.utils import extend_schema
-from .models import Conversation, Message, GmailAccounts
+from .models import Conversation, EmailAccount
 from .serializers import BaseMessageSerializer, PolymorphicMessageSerializer, ConversationSerializer, ConversationDetailSerializer, \
-    EmailMessageSerializer, ServiceAccountSchema, WhatsAppMessageSerializer
+    EmailMessageSerializer, ServiceAccountSchema
 from .email_service.gmail_service import setup_gmail_watch
 from chat_manager.celery_tasks.gmail_tasks import process_gmail_notifications
 from chat_manager.email_service.gmail_auth import get_email_auth_url
@@ -62,7 +62,7 @@ class GmailAuthCallbackView(APIView):
 
         user = request.user
 
-        email_account, created = GmailAccounts.objects.update_or_create(
+        email_account, created = EmailAccount.objects.update_or_create(
             email=email_address,
             defaults={
                 'organization': user.organizations.first(),
@@ -70,6 +70,7 @@ class GmailAuthCallbackView(APIView):
                 'refresh_token': token_data['refresh_token'],
                 'token_uri': token_data['token_uri'],
                 'is_active': True,
+
             }
         )
         setup_gmail_watch(email_account)  ## will be complete
@@ -143,10 +144,8 @@ class ConversationView(APIView):
 
 
 
-class SchemaViewSet(viewsets.ViewSet):
-    """
-    ⚠️ فقط برای تولید schema - استفاده نمی‌شه!
-    """
+class SchemaViewSet(viewsets.ViewSet): 
+
 
     @extend_schema(
         responses={200: ConversationSerializer(many=True)},
@@ -159,7 +158,6 @@ class SchemaViewSet(viewsets.ViewSet):
         return Response(serializer.data)
 
     @extend_schema(
-        
          responses={200: ConversationDetailSerializer(many=True)}
     , description="مکالمه جزئی")
     @action(detail=True, methods=['get'])

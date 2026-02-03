@@ -1,14 +1,12 @@
 import json
-
 from channels.db import database_sync_to_async
-from channels.generic.websocket import AsyncWebsocketConsumer, AsyncJsonWebsocketConsumer
+from channels.generic.websocket import AsyncJsonWebsocketConsumer
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
-from google.oauth2 import service_account
-
-
+from chat_manager.celery_tasks.gmail_tasks import send_email_task
 from .exceptions import OrganizationValidationError
-from .serializers  import ConversationDetailSerializer
+
+
 
 
 class PresenceConsumer(AsyncJsonWebsocketConsumer):
@@ -239,7 +237,7 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
 
 
     async def type_send_email(self, data):
-        from chat_manager.celery_tasks.gmail_tasks import send_email_via_gmail_task
+        from chat_manager.celery_tasks.gmail_tasks import send_email_task
         
         print('start type send email', data)
 
@@ -262,13 +260,7 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
 
 
 
-        task_id =  send_email_via_gmail_task.delay(message_id=msg.id)
-
-
-
-
-
-
+        task_id =  send_email_task.delay(message_id=msg.id)
 
 
 

@@ -136,17 +136,11 @@ class TagSerializer(serializers.Serializer):
     name = serializers.CharField()
     color = serializers.CharField()
 
-
-
 class ContactSerializer(serializers.Serializer):
     id = serializers.IntegerField()
     name = serializers.CharField()
     avatar = serializers.CharField()
     tags = TagSerializer(many=True, allow_null=True)
-
-
-
-
 
 class ConversationSerializer(serializers.ModelSerializer):
     contact = serializers.SerializerMethodField()
@@ -210,18 +204,8 @@ class ConversationDetailSerializer(serializers.ModelSerializer):
         model = Conversation
         fields = ['messages', ]
 
-
-   
-
-
-
     def get_service_type(self, obj):
-        
-         
         return obj.get_service_account()
-
- 
-
 
     @extend_schema_field(PolymorphicProxySerializer(
         component_name='Message',
@@ -237,11 +221,6 @@ class ConversationDetailSerializer(serializers.ModelSerializer):
             context=self.context
         ).data
 
-
-
-
-
-# 1. Base serializer with shared fields
 class BaseServiceAccountSerializer(serializers.ModelSerializer):
     service_type = serializers.SerializerMethodField()
     icon = serializers.SerializerMethodField()
@@ -282,7 +261,7 @@ class WhatsAppServiceAccountSerializer(BaseServiceAccountSerializer):
 class PolymorphicServiceAccountSerializer(serializers.Serializer):
     def to_representation(self, instance):
         service_types = {
-            'GmailAccounts' : EmailServiceAccountSerializer,
+            'EmailAccount' : EmailServiceAccountSerializer,
             'WhatsAppAccount' : WhatsAppServiceAccountSerializer,
 
         }

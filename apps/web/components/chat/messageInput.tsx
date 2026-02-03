@@ -233,10 +233,9 @@ console.log('log error', errors);
 
       // Reset form after send
       reset({
-        subject: '',
         html_body: '',
-        cc_email: '',
-        bcc_email: '',
+        cc_email: undefined,
+        bcc_email: undefined,
       })
 
       setShowCC(false)
