@@ -1,3 +1,5 @@
+from asyncio import FastChildWatcher
+import email
 from unittest import getTestCaseNames
 from django.db.models import manager
 from drf_spectacular.utils import extend_schema_field, PolymorphicProxySerializer
@@ -5,7 +7,7 @@ from pyasn1.type import tag
 from rest_framework import serializers
 
 from chat_manager.models import (
-    Conversation, ChannelIdentity, GmailAccounts, Message, 
+    Conversation, ChannelIdentity, EmailAccount, GmailAccounts, Message, 
     ServiceAccount, WhatsAppAccount, WhatsAppMessage, EmailMessage,
     SERVICE_ACCOUNT_TYPE_CHOICES
 )
@@ -282,3 +284,45 @@ ServiceAccountSchema = PolymorphicProxySerializer(
     ],
     resource_type_field_name=None
 )
+
+
+
+
+class ConnectEmailSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    app_password = serializers.CharField(min_length=8, write_only=True)
+    provider = serializers.ChoiceField(
+        choices=[
+            ('gmail', 'Gmail'),
+            ('outlook', 'Outlook/Office 365'),
+            ('yahoo')
+        ]
+    )
+
+    imap_host = serializers.CharField(required=False, allow_blank=True)
+    imap_port = serializers.IntegerField(required=False, default=993)
+    smtp_host = serializers.CharField(required=False, allow_blank=True)
+    smtp_port = serializers.IntegerField(required=False, default=587)
+    folder = serializers.CharField(required=False, default='INBOX')
+
+
+    def validate_email(self, value):
+        if EmailAccount.objects.filter(email=value).exists():
+            raise serializers.ValidationError({'email': 'this email already exist'})
+        
+        return value
+
+
+    def validate(self, data):
+        provider = data.get('provider')
+
+        if provider == 'custom':
+            if not data.get('imap_host'):
+                raise serializers.ValidationError({'imap_host': 'for custom provider the IMAP host must be existting'})
+
+            if not data.get('smtp_host'):
+                raise serializers.ValidationError({
+                    'smtp_host': "for custom provider the SMTP host must be existting"
+                })
+
+        return data

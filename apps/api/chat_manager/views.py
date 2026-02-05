@@ -6,9 +6,11 @@ from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from rest_framework import status
 from drf_spectacular.utils import extend_schema
+from .imap_handler import IMAPHandler
 from .models import Conversation, EmailAccount
-from .serializers import BaseMessageSerializer, PolymorphicMessageSerializer, ConversationSerializer, ConversationDetailSerializer, \
+from .serializers import BaseMessageSerializer, ConnectEmailSerializer, PolymorphicMessageSerializer, ConversationSerializer, ConversationDetailSerializer, \
     EmailMessageSerializer, ServiceAccountSchema
 from .email_service.gmail_service import setup_gmail_watch
 from chat_manager.celery_tasks.gmail_tasks import process_gmail_notifications
@@ -127,18 +129,57 @@ class GmailWebHook(View):
         """Health check"""
         return JsonResponse({'status': 'ok'})
 
+class ConnectEmailView(APIView):
+    permission_classes = [IsAuthenticated]
 
-class ConversationView(APIView):
+    def post(self, request):
+        serializer = ConnectEmailSerializer(data=request.data)
 
-    def get(self, request):
-        print('=' * 90)
+        if not serializer.is_valid():
+            return Response(
+                {'error': 'Validation failed', 'details': serializer.errors}, status=status.HTTP_400_BAD_REQUEST
+            )
+        data = serializer.validated_data
+        user = request.user
 
-        conversation = Conversation.objects.filter(id=15).optimized_for_detail().first()._cached_messages
-        print('conversation', conversation)
-        srz_data = PolymorphicMessageSerializer(conversation, many=True)
+        imap_handler = IMAPHandler(data)
+        imap_setting = imap_handler._get_imap_setting()
+        test_result = imap_handler._test_imap_connection(
+            imap_host=imap_setting['imap_host'],
+            imap_port=imap_setting['imap_port']
+        )
 
-        print('=' * 90)
-        return JsonResponse(srz_data.data, safe=False)
+        if not test_result['success']:
+            return Response(
+                {'error':'connecting to Imap Failed', 'details': test_result['error']}
+                ,status=status.HTTP_400_BAD_REQUEST
+            )
+
+        email_account = imap_handler._create_email_account(user)
+
+        imap_handler._start_email_worker(email_account)
+
+        return Response({
+            'success': True,
+            'message': 'the email connected',
+
+        }, status=status.HTTP_201_CREATED)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

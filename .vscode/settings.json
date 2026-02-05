@@ -3,5 +3,29 @@
     {
       "mode": "auto"
     }
-  ]
+  ],
+  "emojisense.languages": {
+    "python": true,
+    "markdown": true,
+    "plaintext": true,
+    "git-commit": true,
+    "json": true
+  },
+  "emojisense.showOnColon": true,
+  "emojisense.unicodeCompletionsEnabled": true,
+  "emojisense.markupCompletionsEnabled": true,
+  "editor.quickSuggestions": {
+    "other": true,
+    "comments": true,
+    "strings": true
+  },
+  "editor.suggestOnTriggerCharacters": true,
+  "editor.wordBasedSuggestions": "off",
+  "[python]": {
+    "editor.quickSuggestions": {
+      "other": true,
+      "comments": true,
+      "strings": true
+    }
+  }
 }
