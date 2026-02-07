@@ -1,7 +1,6 @@
 from dataclasses import dataclass
 import email
 from email.header import decode_header
-from http.client import responses
 import logging
 from math import e
 from shutil import ExecError
@@ -39,7 +38,7 @@ class EmailWorker(threading.Thread):
         )
         self.config = config
         self.on_new_email = on_new_email
-        self.server = Optional[IMAPClient] = None
+        self.server : Optional[IMAPClient] = None
         self.running = False
         self._stop_event = threading.Event()
     
@@ -76,7 +75,7 @@ class EmailWorker(threading.Thread):
 
     def _parse_email(self, raw_data: bytes) -> dict:
         """Parse raw email bytes to dict"""
-        msg = email.message_from_bytess(raw_data)
+        msg = email.message_from_bytes(raw_data)
         
         # Decode subject
         subject = msg.get('Subject', '')
@@ -113,12 +112,15 @@ class EmailWorker(threading.Thread):
                 body = payload.decode('utf-8', errors='ignore')
         
         return {
-            'message_id': msg.get('Message-ID'),
+            'id': msg.get('Message-ID'),
             'from_email': msg.get('From'),
             'to_email': msg.get('To'),
+            # 'from': msg.get('From'),
+            # 'to': msg.get('To'),
             'cc': msg.get('Cc'),
             'subject': subject,
             'body': body or html_body,
+            'snippet': (body or html_body)[:200] if (body or html_body) else '',
             'html_body': html_body,
             'date': msg.get('Date'),
             'in_reply_to': msg.get('In-Reply-To'),
@@ -169,11 +171,11 @@ class EmailWorker(threading.Thread):
                 
                 self.server.idle_done()
 
-                if responses:
-                    logger.info(f'IDLE notification: {responses}')
+                if response:
+                    logger.info(f'IDLE notification: {response}')
                     has_new = any(
                         len(r) >= 2 and r[1] == b'EXISTS'
-                        for r in responses
+                        for r in response
                     )
                     
                     if has_new:

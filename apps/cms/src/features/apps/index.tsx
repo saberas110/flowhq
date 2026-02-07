@@ -17,7 +17,8 @@ import { Main } from '@/components/layout/main'
 import { ProfileDropdown } from '@/components/profile-dropdown'
 import { Search } from '@/components/search'
 import { ThemeSwitch } from '@/components/theme-switch'
-import { apps } from './data/apps'
+import { apps, type App } from './data/apps'
+import { ConnectEmailDialog } from './components/connect-email-dialog'
 
 const route = getRouteApi('/_authenticated/apps/')
 
@@ -40,6 +41,14 @@ export function Apps() {
   const [sort, setSort] = useState(initSort)
   const [appType, setAppType] = useState(type)
   const [searchTerm, setSearchTerm] = useState(filter)
+  const [emailDialogOpen, setEmailDialogOpen] = useState(false)
+
+  const handleConnectClick = (app: App) => {
+    if (app.id === 'email-imap') {
+      setEmailDialogOpen(true)
+    }
+    // Other app connection handlers can be added here
+  }
 
   const filteredApps = apps
     .sort((a, b) =>
@@ -149,7 +158,7 @@ export function Apps() {
         <ul className='faded-bottom no-scrollbar grid gap-4 overflow-auto pt-4 pb-16 md:grid-cols-2 lg:grid-cols-3'>
           {filteredApps.map((app) => (
             <li
-              key={app.name}
+              key={app.id}
               className='rounded-lg border p-4 hover:shadow-md'
             >
               <div className='mb-8 flex items-center justify-between'>
@@ -161,6 +170,7 @@ export function Apps() {
                 <Button
                   variant='outline'
                   size='sm'
+                  onClick={() => handleConnectClick(app)}
                   className={`${app.connected ? 'border border-blue-300 bg-blue-50 hover:bg-blue-100 dark:border-blue-700 dark:bg-blue-950 dark:hover:bg-blue-900' : ''}`}
                 >
                   {app.connected ? 'Connected' : 'Connect'}
@@ -174,6 +184,11 @@ export function Apps() {
           ))}
         </ul>
       </Main>
+
+      <ConnectEmailDialog
+        open={emailDialogOpen}
+        onOpenChange={setEmailDialogOpen}
+      />
     </>
   )
 }

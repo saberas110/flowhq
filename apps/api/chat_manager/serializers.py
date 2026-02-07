@@ -295,7 +295,8 @@ class ConnectEmailSerializer(serializers.Serializer):
         choices=[
             ('gmail', 'Gmail'),
             ('outlook', 'Outlook/Office 365'),
-            ('yahoo')
+            ('yahoo', 'Yahoo Mail'),
+            ('custom', 'Custom IMAP/SMTP'),
         ]
     )
 

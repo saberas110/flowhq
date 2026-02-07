@@ -2,6 +2,9 @@ import logging
 import os
 import signal
 import sys
+from worker_manager import worker_manager
+from tasks import app
+    
 
 
 logging.basicConfig(
@@ -12,8 +15,6 @@ logger = logging.getLogger(__name__)
 
 
 def main():
-    from worker_manager import worker_manager
-    from tasks import app
     
     logger.info('=' * 60)
     logger.info('🚀 Starting Email Worker Service')
@@ -33,8 +34,9 @@ def main():
         'worker',
         '--loglevel=info',
         '-Q','email_worker_queue',
-        '--concurrency=4'
+        '--concurrency=4',
+        '-n', 'email_worker@%h'
     ])
 
-    if __name__ == '__main__':
-        main()
+if __name__ == '__main__':
+    main()

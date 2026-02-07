@@ -2,6 +2,7 @@ import time
 from celery import shared_task
 from datetime import timedelta
 from django.utils import timezone
+from google.oauth2 import service_account
 from chat_manager.email_service.gmail_service import setup_gmail_watch, get_history, _fetch_via_imap, _send_via_smtp
 from chat_manager.email_service.gmail_service import  fetch_email_by_id, logger, send_emil_via_gmail, _save_received_email
 from chat_manager.models import EmailAccount, EmailMessage
@@ -210,3 +211,32 @@ def fetch_emails_task(email_account_id, folder='INBOX', limit=50, since_date=Non
 
 
 
+@shared_task(name='chat_manager.celery_tasks.gmail_tasks.save_email_task')
+def save_email_task(email_account_id:int, email_data:dict):
+
+    try:
+        logger.info(f'📥 Received email to save: {email_data.get('subject', '')[:50]}')
+        account = EmailAccount.objects.get(id=email_account_id)
+        message_id = email_data.get('message_id')
+
+        if message_id and EmailMessage.objects.filter(
+            email_message_id=message_id,
+            service_account=account,
+        ).exists():
+            logger.info(f'⏭️ Skipping duplicate: {message_id}')
+            return {'status': 'duplicate', 'message_id': message_id}
+
+        _save_received_email(account, email_data)
+
+        logger.info(f'✅ Saved email: {email_data.get('subject', '')[:50]}')
+        return {'status': 'saved', 'message_id': message_id}
+
+    except EmailAccount.DoesNotExist:
+        logger.error(f'❌ Account not found: {email_account_id}')
+        return {'status': 'error', 'error': 'Account not found'}
+    except Exception as e:
+        logger.error(f"❌ Save error: {e}")
+        import traceback
+        traceback.print_exc()
+        return {'status': 'error', 'error': str(e)}
+        

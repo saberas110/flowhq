@@ -10,6 +10,16 @@ export const api = axios.create({
 });
 
 
+export const apichat = axios.create({
+  baseURL: process.env.NEXT_PUBLIC_CHAT_API_URL,
+  withCredentials: true,
+  headers: {
+ 'Content-Type': 'application/json',
+}
+
+})
+
+
 
 
 

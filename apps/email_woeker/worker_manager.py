@@ -1,8 +1,8 @@
 from ast import Dict
 import logging
 
-from apps.email_woeker.rabbitmq_client import rabbitmq_client
-from apps.email_woeker.Email_worker import EmailConfig, EmailWorker
+from rabbitmq_client import rabbitmq_client
+from Email_worker import EmailConfig, EmailWorker
 
 
 

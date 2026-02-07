@@ -5,7 +5,7 @@ import logging
 from celery import current_app
 from imapclient import IMAPClient
 
-from apps.api.chat_manager.models import Organization
+from chat_manager.models import Organization
 
 
 logger = logging.getLogger(__name__)
@@ -21,6 +21,7 @@ class IMAPHandler:
         self.smtp_host = data.get('smtp_host', None)
         self.smtp_port = data.get('smtp_port', 587)
         self.provider = data['provider']
+        self.sync_folder = data.get('folder', 'INBOX')
 
     def _get_imap_setting(self):
 
@@ -66,7 +67,7 @@ class IMAPHandler:
             )
             
             client.login(self.email, self.password)
-            client.select_folder('INBIX')
+            client.select_folder('INBOX')
             client.logout()
 
             logger.info(f'✅ IMAP test successful for {self.email}')
@@ -83,9 +84,7 @@ class IMAPHandler:
         imap_settint = self._get_imap_setting()
 
         email_account = EmailAccount.objects.create(
-            user = user,
-            Organization = user.organization,
-            name = f'Email- {self.email}',
+            organization = user.organizations.first(),
             email = self.email,
             app_password = self.password,
             provider = self.provider,
@@ -93,21 +92,24 @@ class IMAPHandler:
             imap_port = imap_settint['imap_port'],
             smtp_host = imap_settint['smtp_host'],
             smtp_port = imap_settint['smtp_port'],
-            sync_folder = self.get('folder', 'INBOX'),
+            sync_folder = self.sync_folder,
             is_active = True
         )
 
         logger.info(f'✅ Created EmailAccount: {email_account.email} (id: {email_account.id})')
+        return email_account
 
-    def _start_email_worker(self, email_account):
+    def _start_email_worker(self, email_account, user):
+
+        logger.info(f'☑️ Before start email worker for this email account {email_account}')
 
         try:
             logger.info(f'📥 Starting Email Worker for {email_account.email}')
-
+            
             current_app.send_task(
                 'email_worker.tasks.start_worker_task',
                 kwargs={
-                    'user_id': email_account.user_id,
+                    'user_id': user.id,
                     'email_account_id': email_account.id,
                     'email_address': email_account.email,
                     'password': email_account.app_password,

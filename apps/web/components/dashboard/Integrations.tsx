@@ -17,14 +17,30 @@ import {
   Shield,
   Globe,
 } from "lucide-react";
-import Link from "next/link";
+import { ConnectEmailDialog } from "./ConnectEmailDialog";
 
 const Integrations: React.FC = () => {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [filter, setFilter] = useState("all");
+  const [emailDialogOpen, setEmailDialogOpen] = useState(false);
 
   const integrations = [
     {
+      id: "email-imap",
+      name: "Email (IMAP/SMTP)",
+      description:
+        "Connect any email account using IMAP/SMTP with app password authentication",
+      category: "communication",
+      status: "available",
+      icon: "📧",
+      color: "bg-indigo-100 text-indigo-800",
+      users: 5230,
+      rating: 4.7,
+      features: ["Multi-provider support", "App password auth", "Real-time sync"],
+      connectType: "imap",
+    },
+    {
+      id: "shopify",
       name: "Shopify",
       description:
         "E-commerce platform integration for order management and customer data",
@@ -37,6 +53,7 @@ const Integrations: React.FC = () => {
       features: ["Order tracking", "Customer profiles", "Product catalog sync"],
     },
     {
+      id: "hubspot",
       name: "HubSpot",
       description:
         "CRM integration for lead management and customer relationship tracking",
@@ -49,6 +66,7 @@ const Integrations: React.FC = () => {
       features: ["Contact sync", "Deal tracking", "Activity logging"],
     },
     {
+      id: "whatsapp",
       name: "WhatsApp Business",
       description: "Direct messaging integration for customer communication",
       category: "communication",
@@ -60,9 +78,10 @@ const Integrations: React.FC = () => {
       features: ["Message sync", "Media support", "Group messaging"],
     },
     {
-      name: "Gmail",
+      id: "gmail-oauth",
+      name: "Gmail (OAuth)",
       description:
-        "Email integration for seamless email communication management",
+        "Email integration via Google OAuth for seamless Gmail access",
       category: "communication",
       status: "available",
       icon: "✉️",
@@ -70,8 +89,10 @@ const Integrations: React.FC = () => {
       users: 8940,
       rating: 4.6,
       features: ["Email sync", "Thread tracking", "Auto-categorization"],
+      connectType: "oauth",
     },
     {
+      id: "salesforce",
       name: "Salesforce",
       description:
         "Enterprise CRM integration for advanced customer relationship management",
@@ -84,6 +105,7 @@ const Integrations: React.FC = () => {
       features: ["Lead scoring", "Opportunity tracking", "Custom fields"],
     },
     {
+      id: "calendly",
       name: "Calendly",
       description: "Appointment scheduling integration for booking management",
       category: "scheduling",
@@ -95,6 +117,7 @@ const Integrations: React.FC = () => {
       features: ["Auto-booking", "Calendar sync", "Availability checks"],
     },
     {
+      id: "slack",
       name: "Slack",
       description: "Team communication integration for internal notifications",
       category: "communication",
@@ -106,6 +129,7 @@ const Integrations: React.FC = () => {
       features: ["Alert notifications", "Channel routing", "Bot commands"],
     },
     {
+      id: "woocommerce",
       name: "WooCommerce",
       description:
         "WordPress e-commerce integration for online store management",
@@ -118,6 +142,7 @@ const Integrations: React.FC = () => {
       features: ["Product sync", "Order management", "Customer data"],
     },
     {
+      id: "stripe",
       name: "Stripe",
       description: "Payment processing integration for transaction management",
       category: "payments",
@@ -133,6 +158,16 @@ const Integrations: React.FC = () => {
       ],
     },
   ];
+
+  const handleConnect = (integration: typeof integrations[0]) => {
+    if (integration.id === "email-imap") {
+      setEmailDialogOpen(true);
+    } else if (integration.id === "gmail-oauth") {
+      // Redirect to Gmail OAuth
+      window.location.href = process.env.NEXT_PUBLIC_GMAIL_AUTH_INTEGRATION!;
+    }
+    // Other integrations can be handled here
+  };
 
   const categories = [
     { id: "all", name: "All", icon: Grid },
@@ -288,11 +323,11 @@ const Integrations: React.FC = () => {
 
 
 
-                      <button className="bg-blue-600 text-white px-3 py-1 rounded text-xs font-medium hover:bg-blue-700">
-                        <Link
-                            href={process.env.NEXT_PUBLIC_GMAIL_AUTH_INTEGRATION!}>Connected
-
-                        </Link>
+                      <button 
+                        onClick={() => handleConnect(integration)}
+                        className="bg-blue-600 text-white px-3 py-1 rounded text-xs font-medium hover:bg-blue-700"
+                      >
+                        Connect
                       </button>
                     )}
                   </div>
@@ -404,7 +439,10 @@ const Integrations: React.FC = () => {
                           <Settings className="h-4 w-4" />
                         </button>
                       ) : (
-                        <button className="bg-blue-600 text-white px-4 py-2 rounded text-sm font-medium hover:bg-blue-700">
+                        <button 
+                          onClick={() => handleConnect(integration)}
+                          className="bg-blue-600 text-white px-4 py-2 rounded text-sm font-medium hover:bg-blue-700"
+                        >
                           Connect
                         </button>
                       )}
@@ -434,6 +472,12 @@ const Integrations: React.FC = () => {
           </button>
         </div>
       </div>
+
+      {/* Connect Email Dialog */}
+      <ConnectEmailDialog
+        open={emailDialogOpen}
+        onOpenChange={setEmailDialogOpen}
+      />
     </div>
   );
 };

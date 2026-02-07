@@ -474,8 +474,8 @@ def _save_received_email(email_account, email_data):
     print('='*90)
 
     organization_email = email_account.email
-    _from = clean_email(email_data['from'])
-    _to = clean_email(email_data['to'])
+    _from = clean_email(email_data['from_email'])
+    _to = clean_email(email_data['to_email'])
     contact_email = None
     direction = None
 
@@ -499,10 +499,10 @@ def _save_received_email(email_account, email_data):
         defaults={
             'conversation': conversation,
             'sender': _from,
-            'text': email_data['snippet'],
+            'text': email_data.get('snippet', email_data.get('body', '')[:200]),
             'subject': email_data['subject'],
-            'from_email': email_data['from'],
-            'to_email': email_data['to'],
+            'from_email': email_data['from_email'],
+            'to_email': email_data['to_email'],
             'status': 'received',
             'service_account': email_account,
             'direction': direction

@@ -1,3 +1,4 @@
+import email
 import json
 import base64
 from django.contrib.auth import get_user_model
@@ -140,7 +141,8 @@ class ConnectEmailView(APIView):
                 {'error': 'Validation failed', 'details': serializer.errors}, status=status.HTTP_400_BAD_REQUEST
             )
         data = serializer.validated_data
-        user = request.user
+        # user = request.
+        user = User.objects.get(email='saberas367@gmail.com')
 
         imap_handler = IMAPHandler(data)
         imap_setting = imap_handler._get_imap_setting()
@@ -156,8 +158,7 @@ class ConnectEmailView(APIView):
             )
 
         email_account = imap_handler._create_email_account(user)
-
-        imap_handler._start_email_worker(email_account)
+        imap_handler._start_email_worker(email_account, user)
 
         return Response({
             'success': True,
@@ -166,6 +167,8 @@ class ConnectEmailView(APIView):
         }, status=status.HTTP_201_CREATED)
 
 
+    def get(self, request):
+        return Response({'message': 'success'}, status=status.HTTP_200_OK)
 
 
 

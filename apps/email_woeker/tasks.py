@@ -2,6 +2,7 @@ import os
 from billiard.util import sub_debug
 from celery import Celery
 import logging
+from worker_manager import worker_manager
 
 
 logger = logging.getLogger(__name__)
@@ -33,7 +34,6 @@ def start_worker_task(
     folder = 'INBOX'
 ):
 
-    from email_woeker.worker_manager import worker_manager
 
     logger.info(f'Starting worker for {email_address}')
 
