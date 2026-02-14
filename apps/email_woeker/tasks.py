@@ -14,6 +14,8 @@ app.conf.broker_url = 'amqp://guest:guest@localhost//'
 app.conf.result_backend = 'rpc://'
 app.conf.task_serializer = 'json'
 app.conf.accept_content = ['json']
+app.conf.timezone = 'Asia/Tehran'
+app.conf.enable_utc = False
 
 app.conf.task_routes = {
     'email_worker.tasks.*': {'queue': 'email_worker_queue'}

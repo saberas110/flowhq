@@ -16,5 +16,6 @@ app.conf.result_backend = 'rpc://'
 app.conf.accept_content = ['json', 'pickle']
 app.conf.task_serializer = 'json'
 app.conf.result_serializer = 'json'
-app.conf.timezone = 'UTC'
+app.conf.timezone = 'Asia/Tehran'
+app.conf.enable_utc = False
 

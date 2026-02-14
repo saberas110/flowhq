@@ -2,8 +2,6 @@ from dataclasses import dataclass
 import email
 from email.header import decode_header
 import logging
-from math import e
-from shutil import ExecError
 import threading
 import time
 from typing import Callable, Optional

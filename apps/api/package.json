@@ -1,7 +1,7 @@
 {
     "name": "api",
     "scripts": {
-        "dev": "bash -c 'source .venv/bin/activate && pnpm tunnel'",
+        "dev": "bash -c 'source .venv/bin/activate && concurrently \"pnpm tunnel\" \"celery -A api worker -l info -n api_worker@%h\"'",
         "celery": "bash -c 'source .venv/bin/activate && celery -A api worker -l info'",
         "tunnel": "npx localtunnel --port 8000 --subdomain flowhq-saber-2026",
         "ngrok": "ngrok http 8000",

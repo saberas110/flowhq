@@ -72,9 +72,24 @@ class ServiceAccount(PolymorphicModel, CreatedAtMixin):
 
 
 class WhatsAppAccount(ServiceAccount):
+    # Basic info
     phone_number = models.CharField(max_length=20)
-    phone_number_id = models.CharField(max_length=40, unique=True)
-    access_token = models.TextField()
+
+    # Evolution API fields
+    instance_id = models.CharField(max_length=100, blank=True)
+    instance_name = models.CharField(max_length=255, unique=True, default='')
+    instance_token = models.CharField(max_length=255, blank=True)
+    jid = models.CharField(max_length=100, blank=True)
+    push_name = models.CharField(max_length=100, blank=True)
+    profile_picture_url = models.URLField(max_length=500, null=True, blank=True)
+
+    # Connection status
+    is_connected = models.BooleanField(default=False)
+    connected_at = models.DateTimeField(null=True, blank=True)
+
+    # Meta Business API fields (optional, for future use)
+    phone_number_id = models.CharField(max_length=40, blank=True, default='')
+    access_token = models.TextField(blank=True, default='')
     business_account_id = models.CharField(max_length=40, blank=True)
 
     class Meta:
@@ -450,27 +465,35 @@ class WhatsAppMessage(Message):
         "WhatsAppAccount", on_delete=models.SET_NULL, null=True, related_name="messages"
     )
 
-    # اطلاعات واتساپ
+    # WhatsApp message info
     wa_message_id = models.CharField(max_length=200, unique=True, null=True, blank=True)
     from_number = models.CharField(max_length=20)
     to_number = models.CharField(max_length=20)
+    is_from_me = models.BooleanField(default=False)
 
+    # Media
     media_url = models.URLField(null=True, blank=True)
     media_id = models.CharField(max_length=200, null=True, blank=True)
     mime_type = models.CharField(max_length=100, null=True, blank=True)
     caption = models.TextField(null=True, blank=True)
 
-    # Template (برای پیام‌های تبلیغاتی)
+    # Reply context
+    quoted_message_id = models.CharField(max_length=200, null=True, blank=True)
+
+    # Template (for Business API promotional messages)
     template_name = models.CharField(max_length=100, null=True, blank=True)
     template_language = models.CharField(
         max_length=10, default="fa", null=True, blank=True
     )
     template_parameters = models.JSONField(default=list, blank=True)
 
-    # وضعیت تحویل واتساپ
+    # WhatsApp delivery status
     wa_status = models.CharField(
         max_length=20, null=True, blank=True
     )  # sent, delivered, read, failed
+
+    # Raw Evolution API payload (for debugging)
+    raw_payload = models.JSONField(null=True, blank=True)
 
     class Meta:
         verbose_name = "WhatsApp Message"

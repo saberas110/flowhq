@@ -1,0 +1,8 @@
+{
+    "name": "email",
+
+    "scripts": {
+        "dev": "bash -c 'source ../api/.venv/bin/activate && python3 main.py'"
+    }
+
+}
