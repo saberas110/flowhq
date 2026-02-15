@@ -516,8 +516,11 @@ class Contact(CrUpDateMixin):
     avatar_url = models.URLField(null=True, blank=True)
     tags = models.ManyToManyField("ContactTag", blank=True)
 
+    def get_display_name(self):
+        return self.name or ""
+
     def __str__(self):
-        return self.name or None
+        return self.name or ""
 
 
 class ChannelIdentity(CrUpDateMixin):
@@ -535,6 +538,11 @@ class ChannelIdentity(CrUpDateMixin):
 
     class Meta:
         unique_together = ("channel", "service_account", "external_id")
+
+    def get_display_name(self):
+        if self.contact:
+            return self.contact.get_display_name()
+        return self.external_id or ""
 
     def __str__(self):
         return f"{self.channel}--:{self.external_id}"

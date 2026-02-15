@@ -5,10 +5,10 @@ import requests
 
 class EvolutionService:
     def __init__(self, instance_name: str = None):
-        self.base_url = os.getenv("EVOLUTIN_API_URL", "http://159.65.148.183:8085")
-        self.api_key = os.getenv("EVOLUTIN_API_KEY", "my_evolution_key")
+        self.base_url = os.getenv("EVOLUTION_API_URL", "http://159.65.148.183:8085")
+        self.api_key = os.getenv("EVOLUTION_API_KEY", "my-evolution-key")
         self.instance_name = instance_name
-        self.headers = {"apikey": self.api_key, "Content_Type": "application/json"}
+        self.headers = {"apikey": self.api_key, "Content-Type": "application/json"}
 
     def create_instance(self, webhook_url: str = None):
         """
@@ -18,7 +18,7 @@ class EvolutionService:
 
         url = f"{self.base_url}/instance/create"
         data = {
-            "instaceName": self.instance_name,
+            "instanceName": self.instance_name,
             "integration": "WHATSAPP-BAILEYS",
             "qrcode": True,
         }
@@ -31,7 +31,7 @@ class EvolutionService:
                     "MESSAGES_UPSERT",
                     "MESSAGES_UPDATE",
                     "CONNECTION_UPDATE",
-                    "QRCODE_UPDATE",
+                    "QRCODE_UPDATED",
                 ],
             }
         response = requests.post(url, json=data, headers=self.headers)
@@ -99,7 +99,7 @@ class EvolutionService:
         response = requests.delete(url, headers=self.headers)
         return (
             response.json()
-            if response.requests.status_code == 200
+            if response.status_code == 200
             else {"status": "logged_out"}
         )
 
@@ -117,7 +117,7 @@ class EvolutionService:
             to_phone: Phone number (e.g., '989186949623')
             message: Text message to send
         """
-        url = f"{self.base_url}/messaeg/sendText/{self.instance_name}"
+        url = f"{self.base_url}/message/sendText/{self.instance_name}"
         data = {"number": to_phone, "text": message}
         response = requests.post(url, json=data, headers=self.headers)
         return response.json()

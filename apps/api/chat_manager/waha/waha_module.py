@@ -24,7 +24,7 @@ class WAHAService:
     def _get_session_name(self, phone_number: str = None):
         """Get session name. WAHA Core only supports 'default'."""
         return self.SESSION_NAME
-
+    
     def create_session(self, webhook_url: str = None):
         """Start a WAHA session with optional webhook."""
         url = f'{self.base_url}/api/sessions/start'
@@ -39,7 +39,7 @@ class WAHAService:
                         'events': ['message', 'message.ack', 'session.status']
                     }
                 ]
-            }
+        }
         response = requests.post(url, json=data, headers=self.headers)
         return response.json()
 
@@ -70,7 +70,7 @@ class WAHAService:
         """Get connected WhatsApp account info."""
         status = self.get_session_status()
         return status.get('me')
-
+    
     def stop_session(self):
         """Stop the WAHA session."""
         url = f'{self.base_url}/api/sessions/{self.SESSION_NAME}/stop'
@@ -110,7 +110,7 @@ class WAHAService:
     def send_image(self, to_phone: str, image_url: str, caption: str = ''):
         """
         Send an image with optional caption.
-        
+
         Args:
             to_phone: Phone number without + (e.g., '989186949623')
             image_url: URL of the image to send
