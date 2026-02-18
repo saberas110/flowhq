@@ -61,6 +61,7 @@ def process_gmail_notifications(email_address, history_id):
 
         # پردازش هر message
         processed_count = 0
+        processed_count = 0
         failed_count = 0
 
         for message_id in message_ids:
@@ -154,16 +155,17 @@ def send_email_task(message_id):
             error = result.get('error')
 
         # Update message status
-        if message_id_result:
-            message.status = 'sent'
-            message.email_message_id = message_id_result
-            message.save(update_fields=['status', 'email_message_id'])
-            logger.info(f"✅ Email sent successfully: {message_id_result}")
-        else:
+        if error:
             message.status = 'failed'
             message.error_message = error
             message.save(update_fields=['status', 'error_message'])
             logger.error(f"❌ Email failed: {error}")
+        else:
+            message.status = 'sent'
+            if message_id_result:
+                message.email_message_id = message_id_result
+            message.save(update_fields=['status', 'email_message_id'])
+            logger.info(f"✅ Email sent successfully: {message_id_result}")
 
     except EmailMessage.DoesNotExist:
         logger.error(f"EmailMessage not found: {message_id}")

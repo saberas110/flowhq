@@ -9,7 +9,7 @@ from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
-from drf_spectacular.utils import extend_schema
+from drf_spectacular.utils import PolymorphicProxySerializer, extend_schema
 
 from chat_manager.evolution.evolution_webhook_service import get_evolution_webhook_service
 from .imap_handler import IMAPHandler
@@ -30,6 +30,7 @@ from .serializers import (
     ConversationDetailSerializer,
     EmailMessageSerializer,
     ServiceAccountSchema,
+    WhatsAppMessageSerializer,
 )
 from .email_service.gmail_service import setup_gmail_watch
 from chat_manager.celery_tasks.gmail_tasks import process_gmail_notifications
@@ -50,7 +51,8 @@ User = get_user_model()
 
 def get_organization(request):
     organization = request.user.organizations.first()
-    instance_name = f"org_{organization.id}"
+    existing_count = WhatsAppAccount.objects.filter(organization=organization).count()
+    instance_name = f"org_{organization.id}_wa_{existing_count + 1}"
     return instance_name, organization
 
 
@@ -436,6 +438,11 @@ class ConnectEmailView(APIView):
         return Response({"message": "success"}, status=status.HTTP_200_OK)
 
 
+
+
+
+
+
 class SchemaViewSet(viewsets.ViewSet):
     @extend_schema(
         responses={200: ConversationSerializer(many=True)}, description="لیست مکالمات"
@@ -456,20 +463,27 @@ class SchemaViewSet(viewsets.ViewSet):
         serializer = ConversationDetailSerializer(many=True)
         return Response(serializer.data)
 
-    @extend_schema(
-        request=EmailMessageSerializer,  # ← این باعث میشه Request type بسازه
-        responses={200: EmailMessageSerializer},
-    )
-    @action(detail=False, methods=["post"])
-    def send_email(self, request):
-        pass
+    
 
     @extend_schema(
-        request=BaseMessageSerializer, responses={200: BaseMessageSerializer}
+        request=PolymorphicProxySerializer(
+            component_name='SendMessage',
+            serializers=[EmailMessageSerializer, WhatsAppMessageSerializer, BaseMessageSerializer],
+            resource_type_field_name=None,
+        ),
+        responses={200, PolymorphicProxySerializer(
+            component_name='Message',
+            serializers=[EmailMessageSerializer, WhatsAppMessageSerializer, BaseMessageSerializer],
+            resource_type_field_name=None
+        )}
     )
     @action(detail=False, methods=["post"])
     def send_message(self, request):
         pass
+
+    
+
+
 
     @extend_schema(responses={200: ServiceAccountSchema})
     @action(detail=False, methods=["get"])

@@ -36,7 +36,7 @@ type WritablePart<T> = Pick<T, WritableKeys<T>>;
 
 type TLocalMessageFields = {
     temp_id: string;
-    conversation_id: number;
+    conversation_id: number | null;
     created_at: string;
 };
 

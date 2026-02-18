@@ -1,4 +1,12 @@
 {
+  "python.analysis.extraPaths": [
+    "apps/api"
+  ],
+  "python.autoComplete.extraPaths": [
+    "apps/api"
+  ],
+  "python.defaultInterpreterPath": "apps/api/.venv/bin/python",
+  "python.analysis.importFormat": "absolute",
   "eslint.workingDirectories": [
     {
       "mode": "auto"

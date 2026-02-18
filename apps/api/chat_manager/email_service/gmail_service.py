@@ -14,7 +14,7 @@ from email.mime.text import MIMEText
 from os import getenv
 from asgiref.sync import async_to_sync
 from chat_manager.email_service.gmail_auth import get_email_account
-from chat_manager.models import Conversation, EmailMessage
+from chat_manager.models import ChannelIdentity, Conversation, EmailMessage
 from chat_manager.serializers import MessageSerializer
 
 logger = logging.getLogger(__name__)
@@ -49,7 +49,9 @@ def _parse_email_message(msg, email_id):
         'id': email_id.decode() if isinstance(email_id, bytes) else email_id,
         'subject': subject,
         'from': msg.get('From'),
+        'from_email': msg.get('From'),
         'to': msg.get('To'),
+        'to_email': msg.get('To'),
         'date': msg.get('Date'),
         'body': body,
         'html_body': html_body,
@@ -136,7 +138,9 @@ def parse_gmail_message(message):
             'snippet': message.get('snippet', ''),
             'internalDate': message.get('internalDate'),
             'from': get_header('From'),
+            'from_email': get_header('From'),
             'to': get_header('To'),
+            'to_email': get_header('To'),
             'subject': get_header('Subject'),
             'date': get_header('Date'),
             'body': get_body(message.get('payload', {})),
@@ -222,10 +226,12 @@ def _send_via_smtp(email_account, to, subject, body, cc=None, bcc=None):
 
     try:
         # Build message
+        from email.utils import make_msgid
         msg = MIMEMultipart('alternative')
         msg['From'] = email_account.email
         msg['To'] = to
         msg['Subject'] = subject
+        msg['Message-ID'] = make_msgid(domain=email_account.email.split('@')[1])
         
         if cc:
             cc_list = cc if isinstance(cc, list) else [cc]
@@ -490,10 +496,21 @@ def _save_received_email(email_account, email_data):
         raise ValidationError(str(e))
 
 
-    conversation, created = Conversation.objects.get_or_create(
-        organization=email_account.organization,
-        contact_user_id = contact_email
-    )
+
+    contact_person = ChannelIdentity.objects.filter(external_id=contact_email)
+
+    if contact_person.exists():
+        conversation, created = Conversation.objects.get_or_create(
+            organization=email_account.organization,
+            contact = contact_person.first().contact
+        )
+    else:
+        conversation, created = Conversation.objects.get_or_create(
+            organization=email_account.organization,
+            contact_user_id = contact_email
+        )
+
+
     message, created = EmailMessage.objects.get_or_create(
         email_message_id=email_data['id'],
         defaults={
@@ -522,15 +539,6 @@ def _save_received_email(email_account, email_data):
             'message': MessageSerializer(message).data,
         }
     )
-
-    # for owner in conversation.organization.owner.all():
-    #     async_to_sync(channel_layer.group_send)(
-    #         f'user_{owner.id}',
-    #         {
-    #             'type': 'new.chat',
-    #             'conversation': ConversationSerializer(conversation).data
-    #         }
-    #     )
 
 
 

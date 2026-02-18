@@ -24,7 +24,7 @@ import {
   Wand2,
   GripHorizontal,
 } from 'lucide-react'
-import { sendEmailResolver, TEmailMessageRequest, TSendEmailMessage, TSendMessageParams, TServiceAccount, TServiceTypeEnum } from '@flowhq/shared'
+import { sendEmailResolver, sendWhatsAppResolver, TEmailMessageRequest, TSendEmailMessage, TSendMessageParams, TSendMessageRequest, TServiceAccount, TServiceTypeEnum, TWhatsAppMessageRequest } from '@flowhq/shared'
 import { useForm } from 'react-hook-form'
 import useChatSocket from '@/hooks/sockets/useChatSocket'
 import { useChatContext } from '@/contexts/ChatContext'
@@ -43,25 +43,29 @@ export function MessageInput({ conversationId }: MessageInputProps) {
   const [showChannelDropdown, setShowChannelDropdown] = useState(false)
   const [showCC, setShowCC] = useState(false)
   const [showBCC, setShowBCC] = useState(false)
-  const { sendEmailMessage } = useChatSocket(conversationId);
+  const { sendEmailMessage, sendWhatsAppMessage } = useChatSocket(conversationId);
   const [messageText, setMessageText] = useState<string>("")
   const { channels } = useChatContext()
 
 
   const {
-    register,
-    handleSubmit,
-    setValue,
-    reset,
-    formState: { errors }
+    register: registerEmail,
+    handleSubmit: handleSubmitEmail,
+    setValue: setValueEmail,
+    reset: resetEmail,
+    formState: { errors: emailErrors }
 
   } = useForm({ resolver: sendEmailResolver })
 
 
+  const {
+    register: registerWhatsApp,
+    handleSubmit: handleSubmitWhatsApp,
+    setValue: setValueWhatsApp,
+    reset: resetWhatsApp,
+    formState: { errors: errorWhatsApp }
 
-
-console.log('log error', errors);
-
+  } = useForm({ resolver: sendWhatsAppResolver })
 
 
 
@@ -77,7 +81,7 @@ console.log('log error', errors);
   })
 
   // داده‌های فرضی چنل‌ها
-  
+
 
   // Load saved height (only once)
   useEffect(() => {
@@ -107,19 +111,16 @@ console.log('log error', errors);
 
   useEffect(() => {
     if (selectedChannel && 'email' in selectedChannel) {
-      setValue('from_email', selectedChannel.email as string)
+      setValueEmail('from_email', selectedChannel.email as string)
     }
-  }, [selectedChannel, setValue])
+  }, [selectedChannel, setValueEmail])
 
 
-
-
-
-
-
-
-
-
+  useEffect(() => {
+    if (selectedChannel) {
+      setValueWhatsApp('service_account_id', selectedChannel.id)
+    }
+  }, [selectedChannel, setValueWhatsApp])
 
 
 
@@ -133,7 +134,8 @@ console.log('log error', errors);
   // Handle channel selection
   const handleChannelSelect = (channel: TServiceAccount) => {
     setSelectedChannel(channel)
-    setValue('service_account_id', channel.id)
+    setValueEmail('service_account_id', channel.id)
+    setValueWhatsApp('service_account_id', channel.id)
     setShowChannelDropdown(false)
     localStorage.setItem('lastSelectedChannel', channel.id.toString())
 
@@ -220,33 +222,28 @@ console.log('log error', errors);
   }, [isResizing])
 
   // Handle send message
-  const handleSend = async (data?: TEmailMessageRequest) => {
+  const handleSendEmail = async (data?: TSendMessageRequest) => {
     if (selectedChannel?.service_type === TServiceTypeEnum.EMAIL) {
-      // Email data
-
-
-      console.log('before send mail', data);
-
-
       await sendEmailMessage(data as TEmailMessageRequest)
-
-
-      // Reset form after send
-      reset({
+      resetEmail({
         html_body: '',
         cc_email: undefined,
         bcc_email: undefined,
       })
-
       setShowCC(false)
       setShowBCC(false)
-    } else {
-      // Simple message
-      if (!messageText.trim()) return
+    }
+  }
 
 
-
-      setMessageText('')
+  const handleSendWhatsApp = async (data?: TWhatsAppMessageRequest) => {
+    if (selectedChannel?.service_type === TServiceTypeEnum.WHATSAPP) {
+      console.log('its from handle sendWhatsApp', data);
+      
+      await sendWhatsAppMessage(data as TWhatsAppMessageRequest)
+      resetWhatsApp({
+        text: ''
+      })
     }
   }
 
@@ -261,9 +258,9 @@ console.log('log error', errors);
       e.preventDefault()
       if (selectedChannel?.service_type === TServiceTypeEnum.EMAIL) {
         // Trigger form submission for email
-        handleSubmit(handleSend)()
+        handleSubmitEmail(handleSendEmail)()
       } else {
-        handleSend()
+        handleSendEmail()
       }
     }
   }
@@ -289,9 +286,9 @@ console.log('log error', errors);
         // ============================================
         // EMAIL ADVANCED INPUT
         // ============================================
-        <form onSubmit={handleSubmit(handleSend)}>
-          <input type="hidden" {...register('from_email')} />
-          <input type="hidden" {...register('service_account_id')} />
+        <form onSubmit={handleSubmitEmail(handleSendEmail)}>
+          <input type="hidden" {...registerEmail('from_email')} />
+          <input type="hidden" {...registerEmail('service_account_id')} />
 
           <div className="p-4 space-y-3">
             {/* Channel Selector */}
@@ -347,7 +344,7 @@ console.log('log error', errors);
                   Subject:
                 </label>
                 <input
-                  {...register('subject')}
+                  {...registerEmail('subject')}
                   placeholder="Add Subject"
                   required
                   className="flex-1 px-3 py-2 text-sm border-0 border-b border-gray-300 focus:border-blue-500 focus:ring-0 bg-transparent outline-none"
@@ -376,7 +373,7 @@ console.log('log error', errors);
                     CC:
                   </label>
                   <input
-                    {...register('cc_email')}
+                    {...registerEmail('cc_email')}
                     placeholder="Add CC"
                     className="flex-1 px-3 py-2 text-sm border-0 border-b border-gray-300 focus:border-blue-500 focus:ring-0 bg-transparent outline-none"
                     onKeyDown={handleKeyDown}
@@ -391,7 +388,7 @@ console.log('log error', errors);
                     BCC:
                   </label>
                   <input
-                    {...register('bcc_email')}
+                    {...registerEmail('bcc_email')}
                     placeholder="Add BCC"
                     className="flex-1 px-3 py-2 text-sm border-0 border-b border-gray-300 focus:border-blue-500 focus:ring-0 bg-transparent outline-none"
                     onKeyDown={handleKeyDown}
@@ -441,7 +438,7 @@ console.log('log error', errors);
             {/* Message Body with Resize */}
             <div className="relative group">
               <textarea
-                {...register('html_body')}
+                {...registerEmail('html_body')}
                 placeholder="Use '/' for snippets, '$' for variables, ':' for emoji"
                 className="w-full px-3 py-2 pt-6 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none transition-shadow outline-none"
                 style={{ height: `${emailBodyHeight}px` }}
@@ -519,77 +516,80 @@ console.log('log error', errors);
         // ============================================
         // SIMPLE INPUT (Telegram/WhatsApp)
         // ============================================
-        <div className="p-4">
-          {/* Channel Selector */}
-          <div className="relative channel-dropdown-container mb-3">
-            <button
-              onClick={() => setShowChannelDropdown(!showChannelDropdown)}
-              className="flex items-center gap-2 text-sm text-gray-700 hover:text-gray-900 transition-colors"
-            >
-              <span className="h-4 w-4">{selectedChannel.icon}</span>
-              <span className="font-medium">{selectedChannel.display_name}</span>
-              <ChevronDown className={`h-4 w-4 text-gray-400 transition-transform ${showChannelDropdown ? 'rotate-180' : ''}`} />
-            </button>
+        <form onSubmit={handleSubmitWhatsApp(handleSendWhatsApp)}>
+            <input type="hidden" {...registerWhatsApp('service_account_id')}/>
+          <div className="p-4">
+            {/* Channel Selector */}
+            <div className="relative channel-dropdown-container mb-3">
+              <button
+              type='button'
+                onClick={() => setShowChannelDropdown(!showChannelDropdown)}
+                className="flex items-center gap-2 text-sm text-gray-700 hover:text-gray-900 transition-colors"
+              >
+                <span className="h-4 w-4">{selectedChannel.icon}</span>
+                <span className="font-medium">{selectedChannel.display_name}</span>
+                <ChevronDown className={`h-4 w-4 text-gray-400 transition-transform ${showChannelDropdown ? 'rotate-180' : ''}`} />
+              </button>
 
-            {/* Dropdown */}
-            {showChannelDropdown && (
-              <div className="absolute bottom-full left-0 mb-2 w-80 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
-                <div className="p-2 max-h-64 overflow-y-auto">
-                  {channels.map((channel) => (
-                    <button
-                      key={channel.id}
-                      onClick={() => handleChannelSelect(channel)}
-                      className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors ${selectedChannel.id === channel.id ? 'bg-blue-50' : ''
-                        }`}
-                    >
-                      <span className="h-4 w-4 text-gray-600 flex-shrink-0">{channel.icon}</span>
-                      <div className="flex-1 text-left min-w-0">
-                        <p className="text-sm font-medium text-gray-900 truncate">
-                          {channel.display_name}
-                        </p>
-                        {'email' in channel && (
-                          <p className="text-xs text-gray-500 truncate">{channel.email}</p>
+              {/* Dropdown */}
+              {showChannelDropdown && (
+                <div className="absolute bottom-full left-0 mb-2 w-80 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
+                  <div className="p-2 max-h-64 overflow-y-auto">
+                    {channels.map((channel) => (
+                      <button
+                      type='button'
+                        key={channel.id}
+                        onClick={() => handleChannelSelect(channel)}
+                        className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors ${selectedChannel.id === channel.id ? 'bg-blue-50' : ''
+                          }`}
+                      >
+                        <span className="h-4 w-4 text-gray-600 flex-shrink-0">{channel.icon}</span>
+                        <div className="flex-1 text-left min-w-0">
+                          <p className="text-sm font-medium text-gray-900 truncate">
+                            {channel.display_name}
+                          </p>
+                          {'email' in channel && (
+                            <p className="text-xs text-gray-500 truncate">{channel.email}</p>
+                          )}
+                        </div>
+                        {selectedChannel.id === channel.id && (
+                          <Check className="h-4 w-4 text-blue-600 flex-shrink-0" />
                         )}
-                      </div>
-                      {selectedChannel.id === channel.id && (
-                        <Check className="h-4 w-4 text-blue-600 flex-shrink-0" />
-                      )}
-                    </button>
-                  ))}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            )}
-          </div>
-
-          {/* Simple Input */}
-          <div className="flex items-center gap-2 sm:gap-4">
-            <button className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 flex-shrink-0 transition-colors">
-              <Paperclip className="h-5 w-5" />
-            </button>
-            <div className="flex-1 relative">
-              <input
-                type="text"
-                value={messageText}
-                onChange={(e) => setMessageText(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder="Type your message..."
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm outline-none"
-              />
+              )}
             </div>
-            <button
-              onClick={handleSend}
-              disabled={!messageText.trim()}
-              className="bg-blue-600 text-white p-2 rounded-lg hover:bg-blue-700 transition-colors flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-blue-600"
-            >
-              <Send className="h-5 w-5" />
-            </button>
-          </div>
 
-          {/* AI Message */}
-          <div className="mt-2 text-xs text-gray-500 hidden sm:block">
-            💡 AI is actively handling this conversation. You can take over anytime.
+            {/* Simple Input */}
+            <div className="flex items-center gap-2 sm:gap-4">
+              <button className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 flex-shrink-0 transition-colors">
+                <Paperclip className="h-5 w-5" />
+              </button>
+              <div className="flex-1 relative">
+                <input
+                {...registerWhatsApp('text')}
+                  type="text"
+                  onKeyDown={handleKeyDown}
+                  placeholder="Type your message..."
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm outline-none"
+                />
+              </div>
+              <button
+              type='submit'
+                className="bg-blue-600 text-white p-2 rounded-lg hover:bg-blue-700 transition-colors flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-blue-600"
+              >
+                <Send className="h-5 w-5" />
+              </button>
+            </div>
+
+            {/* AI Message */}
+            <div className="mt-2 text-xs text-gray-500 hidden sm:block">
+              💡 AI is actively handling this conversation. You can take over anytime.
+            </div>
           </div>
-        </div>
+        </form>
       )}
     </div>
   )

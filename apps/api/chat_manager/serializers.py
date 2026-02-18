@@ -76,7 +76,7 @@ class WhatsAppMessageSerializer(BaseMessageSerializer):
     """
     ✅ Serializer برای WhatsAppMessage
     """
-    service_account = serializers.SerializerMethodField()
+    service_account_id = serializers.IntegerField(write_only=True, required=True)
     is_media = serializers.BooleanField(source='is_media_message', read_only=True)
 
     class Meta(BaseMessageSerializer.Meta):
@@ -86,26 +86,16 @@ class WhatsAppMessageSerializer(BaseMessageSerializer):
             'media_url', 'media_id', 'mime_type', 'caption',
             'template_name', 'template_language', 'template_parameters',
             'wa_message_id', 'wa_status', 'is_media',
-            'service_account'
+            'service_account_id'
         ]
         read_only_fields = list(BaseMessageSerializer.Meta.read_only_fields) + [
+            'from_number', 'to_number',
+            'media_url', 'media_id', 'mime_type', 'caption',
+            'template_name', 'template_language', 'template_parameters',
             'wa_message_id', 'wa_status', 'is_media',
-            'service_account'
         ]
 
-    def get_service_account(self, obj):
-        """
-        ✅ اطلاعات ServiceAccount
-        """
-        if obj.whatsapp_account:
-            return {
-                'id': obj.whatsapp_account.id,
-                'type': 'whatsapp',
-                'display_name': obj.whatsapp_account.display_name,
-                'phone_number': obj.whatsapp_account.phone_number,
-                'icon': '💬'
-            }
-        return None
+    
 
 
 class PolymorphicMessageSerializer(serializers.Serializer):
@@ -157,21 +147,23 @@ class ConversationSerializer(serializers.ModelSerializer):
         if not obj.contact:
             return {
                 'id': obj.contact_user_id,
-                'name': obj.contact_user_id ,
+                'name': obj.contact_user_id,
                 'avatar': '',
                 'tags': None
             }
 
-        tags = getattr(obj.contact, '_cached_tags', None)
+        contact = obj.contact
+
+        tags = getattr(contact, '_cached_tags', None)
         if tags is None:
-            tags = obj.contact.tags.all()
+            tags = contact.tags.all()
 
         return {
-            'id': obj.contact.id,
-            'name': obj.contact.name or '',
-            'avatar': '',
+            'id': contact.id,
+            'name': contact.name or '',
+            'avatar': contact.avatar_url or '',
             'tags': [
-                {'id': tag.id, 'name': tag.name or '', 'color': tag.colort}
+                {'id': tag.id, 'name': tag.name or '', 'color': tag.color}
                 for tag in tags
             ]
         }
@@ -284,6 +276,9 @@ ServiceAccountSchema = PolymorphicProxySerializer(
     ],
     resource_type_field_name=None
 )
+
+
+
 
 
 

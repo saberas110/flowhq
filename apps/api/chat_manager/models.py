@@ -61,12 +61,12 @@ class ServiceAccount(PolymorphicModel, CreatedAtMixin):
     )
 
     def __str__(self):
-        return f"{self.__class__.__name__} {self.organization.name}"
+        return f"{self.get_service_type_display()} - {self.organization.name}"
 
     def save(self, *args, **kwargs):
         # Auto-set service_type based on child class
         if not self.service_type:
-            types = {"WhatsAppAccount": "whatsapp", "GmailAccounts": "email"}
+            types = {"WhatsAppAccount": "whatsapp", "EmailAccount": "email", "GmailAccounts": "email"}
             self.service_type = types.get(type(self).__name__, "")
         super().save(*args, **kwargs)
 
@@ -94,6 +94,9 @@ class WhatsAppAccount(ServiceAccount):
 
     class Meta:
         verbose_name = "WhatsApp Account"
+
+    def __str__(self):
+        return f"WhatsApp - {self.phone_number} ({self.organization.name})"
 
 
 class EmailAccount(ServiceAccount):
@@ -135,6 +138,9 @@ class EmailAccount(ServiceAccount):
     last_sync_at = models.DateTimeField(null=True, blank=True)
     sync_folder = models.CharField(max_length=100, default='INBOX')
 
+
+    def __str__(self):
+        return f"Email - {self.email} ({self.organization.name})"
 
     def save(self, *args, **kwargs):
         if not self.smtp_host:
@@ -220,9 +226,9 @@ class Conversation(CrUpDateMixin):
     title = models.CharField(max_length=100, null=True, blank=True)
     contact_user_id = models.CharField(max_length=255, null=True, blank=True)
     contact = models.ForeignKey(
-        "ChannelIdentity",
+        'Contact',
         on_delete=models.CASCADE,
-        related_name="conversations",
+        related_name="contacts",
         null=True,
         blank=True,
     )
@@ -529,7 +535,7 @@ class ChannelIdentity(CrUpDateMixin):
         ("email", "Email"),
     ]
     contact = models.ForeignKey(Contact, models.CASCADE, "identities")
-    service_account = models.ForeignKey(ServiceAccount, models.CASCADE, "identities")
+
     organization = models.ForeignKey(
         Organization, models.CASCADE, "identities", null=True
     )
@@ -537,7 +543,7 @@ class ChannelIdentity(CrUpDateMixin):
     channel = models.CharField(max_length=25, choices=CHANNEL_CHOICES)
 
     class Meta:
-        unique_together = ("channel", "service_account", "external_id")
+        unique_together = ("channel", "external_id")
 
     def get_display_name(self):
         if self.contact:

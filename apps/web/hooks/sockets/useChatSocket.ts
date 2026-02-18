@@ -38,7 +38,7 @@ export default function useChatSocket(conversation_id: number | null = null) {
   conversation_id !== null && conversation_id !== 0
   );
 
-  const {sendEmailMessage } = useSendMessage({
+  const {sendEmailMessage, sendWhatsAppMessage } = useSendMessage({
     readyState, sendJsonMessage, conversation_id
   })
 
@@ -79,6 +79,7 @@ const handleNewMessage = (message:TMessage)=>{
 return {
   messages,
   sendEmailMessage,
+  sendWhatsAppMessage,
   isConnected: readyState !== ReadyState.OPEN,
 };
 }

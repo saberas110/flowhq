@@ -1,10 +1,18 @@
 import json
+import logging
 from channels.db import database_sync_to_async
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
+from google.oauth2 import service_account
+from chat_manager.evolution.evolution_service import get_evolution_service
 from chat_manager.celery_tasks.gmail_tasks import send_email_task
-from .exceptions import OrganizationValidationError
+from .exceptions import ContactValidationError, OrganizationValidationError
+
+
+
+logger = logging.getLogger(__name__)
+
 
 
 
@@ -190,13 +198,15 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
     async def receive_json(self, data, **kwargs):
 
         print('start receive ', data)
+
         message_type = data.get('message_type', None)
         body_message = data.get('html_body', None)
 
         type_receive = {
             "chat_message": self.type_chat_message,
             "read_message": 'self.type_read_message',
-            "email": self.type_send_email
+            "email": self.type_send_email,
+            'whatsapp': self.type_send_whatsapp_message,
         }
 
         if not self.conversation_id:
@@ -210,12 +220,106 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
         await handler(data)
 
 
+    async def type_send_whatsapp_message(self, data):
+        service_account_id = data.get('service_account_id')
+        message = data.get('text', '')
+        conv =await self.get_conversation_query(self.conversation_id)
+        
+        if conv.contact:
+            whatsapp_identity = next(
+                (i for i in conv.contact._cached_identites
+                if i.channel == 'whatsapp'),
+                None
+            )
+            if not whatsapp_identity:
+                await self.send_json({'type': 'error', 'message': 'No WhatsApp identity found'})
+                return
+            to_phone = whatsapp_identity.external_id
+        else:
+            to_phone = conv.contact_user_id
+
+        if not to_phone:
+            await self.send_json({'type': 'error', 'message': 'No phone number found'})
+            return
+
+        
+        account = await self.get_service_accounts(service_account_id)
+        instance_name = account.instance_name
+
+        service = get_evolution_service(instance_name)
+
+        if not service.is_connected():
+            logger.error('WhatsApp not connected. Scan QR first')
+            return
+        
+        result = service.send_text(to_phone=to_phone, message=message)
+
+        await self.save_whatsapp_message(instance_name, to_phone, conv.organization, conv.id, result, message)
+            
+
+
+
+
+
+
+    @database_sync_to_async
+    def save_whatsapp_message(self, instance_name, to_phone, organization, conversation_id, result, message):
+        from .models import WhatsAppAccount,WhatsAppMessage
+        from .models import Contact
+        from .models import ChannelIdentity
+
+
+        try:
+            account = WhatsAppAccount.objects.get(instance_name=instance_name)
+            remote_jid = f"{to_phone}@whatsapp.net"
+            contact, _ = Contact.objects.get_or_create(
+            name=to_phone, defaults={"avatar_url": None}
+        )
+            identity, _ = ChannelIdentity.objects.get_or_create(
+                channel="whatsapp",
+                service_account=account,
+                external_id=remote_jid,
+                defaults={
+                    "contact": contact,
+                    "organization": organization,
+                },
+            )
+
+            WhatsAppMessage.objects.create(
+            whatsapp_account=account,
+            conversation_id=conversation_id,
+            wa_message_id=result.get("key", {}).get("id"),
+            from_number=account.phone_number,
+            to_number=to_phone,
+            is_from_me=True,
+            text=message,
+            message_type="text",
+            direction="out",
+            status="sent",
+            sender=account.push_name or account.phone_number,
+            wa_status="sent",
+            raw_payload=result,
+        )
+        except Exception as e:
+            print(f"⚠️ Error saving sent message: {e}")
+
+        return ({"status": "sent", "result": result})
+
+
+
+
+        
+
+            
+
+
+
+
 
 
     async def type_chat_message(self, data):
         from chat_manager.whatsapp_mock import Whatsapp
 
-        print('data is/////////////////////////', data)
         srz_msg = await self.create_message(data)
         await self.channel_layer.group_send(self.char_room_name,{
             'type': 'chat.message',
@@ -235,11 +339,9 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
 
         handler()
 
-
     async def type_send_email(self, data):
         from chat_manager.celery_tasks.gmail_tasks import send_email_task
         
-        print('start type send email', data)
 
         conversation = await self.get_conversation_query(self.conversation_id)
         if conversation is None:
@@ -247,8 +349,12 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
 
 
         if conversation.contact is not None:
-            channel_identity = conversation.contact.identites.get(channel='email')
-            to_email = channel_identity.external_id if channel_identity is not None else None
+            email_identity = next(
+                (i for i in conversation.contact._cached_identites
+                 if i.channel == 'email'),
+                None
+            )
+            to_email = email_identity.external_id if email_identity is not None else None
         else:
             to_email = conversation.contact_user_id
 
@@ -265,8 +371,7 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
 
 
     async def chat_message(self, event):
-        # is_me = (self.user.id == event.get('message', None))
-        # event['message']['is_me'] = is_me
+        
         await self.send(text_data=json.dumps({
             'type': 'chat_message',
             'message': event.get('message', None)
@@ -279,6 +384,10 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
             'type': 'new_message',
             'message': data.get('message', None)
         })
+
+
+
+
 
 
 
@@ -331,13 +440,15 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
     @database_sync_to_async
     def create_message(self,data):
         from .models import Message
-        print('data', data)
         data['conversation_id'] = self.conversation_id
         temp_id = data.pop('temp_id')
         msg = Message.objects.create_from_data(data)
         print('msg', msg)
 
         return msg
+
+
+    
 
 
     @database_sync_to_async

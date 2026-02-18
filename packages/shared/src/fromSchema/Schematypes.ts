@@ -160,6 +160,8 @@ export type TLastMessage = {
 
 export type TMessage = TEmailMessage | TWhatsAppMessage | TBaseMessage;
 
+export type TSendMessageRequest = TEmailMessageRequest | TWhatsAppMessageRequest | TBaseMessageRequest;
+
 export type TServiceAccount = TEmailServiceAccount | TWhatsAppServiceAccount | TBaseServiceAccount;
 
 export type TTag = {
@@ -184,20 +186,28 @@ export type TWhatsAppMessage = {
   readonly service_icon: string;
   readonly is_me: string;
   message_type?: TMessageTypeEnum;
-  from_number: string;
-  to_number: string;
+  readonly from_number: string;
+  readonly to_number: string;
   /** Format: uri */
-  media_url?: string | null;
-  media_id?: string | null;
-  mime_type?: string | null;
-  caption?: string | null;
-  template_name?: string | null;
-  template_language?: string | null;
-  template_parameters?: unknown;
+  readonly media_url: string | null;
+  readonly media_id: string | null;
+  readonly mime_type: string | null;
+  readonly caption: string | null;
+  readonly template_name: string | null;
+  readonly template_language: string | null;
+  readonly template_parameters: unknown;
   readonly wa_message_id: string | null;
   readonly wa_status: string | null;
   readonly is_media: boolean;
-  readonly service_account: string;
+};
+
+export type TWhatsAppMessageRequest = {
+  text?: string | null;
+  sender?: string;
+  direction?: TDirectionEnum | TBlankEnum;
+  status?: TStatusEnum;
+  message_type?: TMessageTypeEnum;
+  service_account_id: number;
 };
 
 export type TWhatsAppServiceAccount = {

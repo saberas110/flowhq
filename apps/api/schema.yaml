@@ -57,14 +57,22 @@ paths:
       responses:
         '200':
           description: No response body
-  /api/chat/hello:
+  /api/chat/email/connect:
     get:
-      operationId: chat_hello_retrieve
+      operationId: chat_email_connect_retrieve
       tags:
       - chat
       security:
       - jwtAuth: []
-      - {}
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: chat_email_connect_create
+      tags:
+      - chat
+      security:
+      - jwtAuth: []
       responses:
         '200':
           description: No response body
@@ -120,51 +128,22 @@ paths:
                 items:
                   $ref: '#/components/schemas/Conversation'
           description: ''
-  /api/chat/schema/send_email/:
-    post:
-      operationId: chat_schema_send_email_create
-      description: ⚠️ فقط برای تولید schema - استفاده نمی‌شه!
-      tags:
-      - chat
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/EmailMessageRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/EmailMessageRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/EmailMessageRequest'
-        required: true
-      security:
-      - jwtAuth: []
-      - {}
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/EmailMessage'
-          description: ''
   /api/chat/schema/send_message/:
     post:
       operationId: chat_schema_send_message_create
-      description: ⚠️ فقط برای تولید schema - استفاده نمی‌شه!
       tags:
       - chat
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/BaseMessageRequest'
+              $ref: '#/components/schemas/SendMessageRequest'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/BaseMessageRequest'
+              $ref: '#/components/schemas/SendMessageRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/BaseMessageRequest'
+              $ref: '#/components/schemas/SendMessageRequest'
       security:
       - jwtAuth: []
       - {}
@@ -173,12 +152,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/BaseMessage'
+                type: object
+                additionalProperties: {}
+                description: Unspecified response body
           description: ''
   /api/chat/schema/service_accounts/:
     get:
       operationId: chat_schema_service_accounts_retrieve
-      description: ⚠️ فقط برای تولید schema - استفاده نمی‌شه!
       tags:
       - chat
       security:
@@ -191,6 +171,75 @@ paths:
               schema:
                 $ref: '#/components/schemas/ServiceAccount'
           description: ''
+  /api/chat/webhook/whatsapp:
+    post:
+      operationId: chat_webhook_whatsapp_create
+      description: Webhook - receives events from Evolution API
+      tags:
+      - chat
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/chat/whatsapp/connect:
+    post:
+      operationId: chat_whatsapp_connect_create
+      description: Create Evolution instance and return QR code URL
+      tags:
+      - chat
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/chat/whatsapp/disconnect:
+    post:
+      operationId: chat_whatsapp_disconnect_create
+      description: Logout from WhatsApp
+      tags:
+      - chat
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/chat/whatsapp/qr:
+    get:
+      operationId: chat_whatsapp_qr_retrieve
+      description: Get QR code image
+      tags:
+      - chat
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/chat/whatsapp/send:
+    post:
+      operationId: chat_whatsapp_send_create
+      description: Send a WhatsApp message
+      tags:
+      - chat
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/chat/whatsapp/status:
+    get:
+      operationId: chat_whatsapp_status_retrieve
+      description: Check WhatsApp connection status
+      tags:
+      - chat
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
 components:
   schemas:
     BaseMessage:
@@ -563,6 +612,11 @@ components:
         * `location` - Location
         * `contact` - Contact
         * `template` - Template
+    SendMessageRequest:
+      oneOf:
+      - $ref: '#/components/schemas/EmailMessageRequest'
+      - $ref: '#/components/schemas/WhatsAppMessageRequest'
+      - $ref: '#/components/schemas/BaseMessageRequest'
     ServiceAccount:
       oneOf:
       - $ref: '#/components/schemas/EmailServiceAccount'
@@ -654,35 +708,37 @@ components:
           $ref: '#/components/schemas/MessageTypeEnum'
         from_number:
           type: string
-          maxLength: 20
+          readOnly: true
         to_number:
           type: string
-          maxLength: 20
+          readOnly: true
         media_url:
           type: string
           format: uri
+          readOnly: true
           nullable: true
-          maxLength: 200
         media_id:
           type: string
+          readOnly: true
           nullable: true
-          maxLength: 200
         mime_type:
           type: string
+          readOnly: true
           nullable: true
-          maxLength: 100
         caption:
           type: string
+          readOnly: true
           nullable: true
         template_name:
           type: string
+          readOnly: true
           nullable: true
-          maxLength: 100
         template_language:
           type: string
+          readOnly: true
           nullable: true
-          maxLength: 10
-        template_parameters: {}
+        template_parameters:
+          readOnly: true
         wa_message_id:
           type: string
           readOnly: true
@@ -694,23 +750,49 @@ components:
         is_media:
           type: boolean
           readOnly: true
-        service_account:
-          type: string
-          readOnly: true
       required:
+      - caption
       - created_at
       - from_number
       - id
       - is_me
       - is_media
+      - media_id
+      - media_url
+      - mime_type
       - sent_at
-      - service_account
       - service_icon
       - service_type
+      - template_language
+      - template_name
+      - template_parameters
       - to_number
       - updated_at
       - wa_message_id
       - wa_status
+    WhatsAppMessageRequest:
+      type: object
+      description: ✅ Serializer برای WhatsAppMessage
+      properties:
+        text:
+          type: string
+          nullable: true
+        sender:
+          type: string
+          maxLength: 255
+        direction:
+          oneOf:
+          - $ref: '#/components/schemas/DirectionEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+        status:
+          $ref: '#/components/schemas/StatusEnum'
+        message_type:
+          $ref: '#/components/schemas/MessageTypeEnum'
+        service_account_id:
+          type: integer
+          writeOnly: true
+      required:
+      - service_account_id
     WhatsAppServiceAccount:
       type: object
       properties:

@@ -1,6 +1,6 @@
 import { useCallback } from "react";
 import { ReadyState } from "react-use-websocket";
-import { TStatusEnum, TMessageTypeEnum, TLocalMessage, TDirectionEnum,  TSendMessageParams, TSendEmailMessage, TEmailMessageRequest, } from "@flowhq/shared";
+import { TStatusEnum, TMessageTypeEnum, TLocalMessage, TDirectionEnum,  TSendMessageParams, TSendEmailMessage, TEmailMessageRequest, TWhatsAppMessageRequest, TLocalWhatsAppMessage, TSendWhatsAppMessage, } from "@flowhq/shared";
 import { useChatContext } from "@/contexts/ChatContext";
 
 
@@ -50,19 +50,6 @@ export default function useSendMessage({
 
       const tempId = generateTempId();
       try {
-        // let attachments: TAttachment[] = [];
-        // if (params.attachments && params.attachments.length > 0) {
-        //   const uploadPromises = params.attachments.map(async (file) => {
-        //     return {
-        //       name: file.name,
-        //       url: await uploadFile(file),
-        //       size: file.size,
-        //       type: file.type,
-        //     };
-        //   });
-        //   attachments = await Promise.all(uploadPromises);
-        // }
-
         const tempMessage: TLocalMessage = {
           temp_id: tempId,
           message_type: TMessageTypeEnum.EMAIL,
@@ -79,8 +66,6 @@ export default function useSendMessage({
           ...(params.cc_email ? { cc_email: params.cc_email } : {}),
           // ...(attachments.length > 0 && { attachments }),
         };
-
-        console.log("tempMessage", tempMessage);
 
         setMessages((prev) => [...prev, tempMessage]);
 
@@ -114,7 +99,53 @@ export default function useSendMessage({
     },
     [readyState, conversation_id, generateTempId, sendJsonMessage, uploadFile, setMessages]
   );
-  return { sendEmailMessage };
+
+
+
+
+const sendWhatsAppMessage = useCallback(
+  async (params: TWhatsAppMessageRequest)=>{
+
+    if (readyState !== ReadyState.OPEN) {
+      console.log("connection failed");
+      return;
+    }
+
+    const tempId = generateTempId();
+
+    try {
+      const tempWhatsAppMessage: TLocalWhatsAppMessage = {
+        conversation_id,
+        created_at: new Date().toISOString(),
+        temp_id: tempId,
+      };
+  
+      setMessages((prev) => [...prev, tempWhatsAppMessage]);
+
+      const whatsAppParams: TSendWhatsAppMessage = {
+        message_type: TMessageTypeEnum.WHATSAPP,
+        text: params.text,
+        service_account_id: params.service_account_id,
+        temp_id: tempId,
+      }
+
+
+      sendJsonMessage(whatsAppParams)
+    }catch (err) {
+      console.log(err);
+      setMessages((prev) =>
+        prev.map((msg) =>
+          'temp_id' in msg && msg.temp_id === tempId
+            ? { ...msg, status: TStatusEnum.FAILED }
+            : msg
+        )
+      );
+    }
+  },
+
+  [readyState, conversation_id, generateTempId, sendJsonMessage, uploadFile, setMessages]
+)
+  return { sendEmailMessage, sendWhatsAppMessage };
 }
 
 

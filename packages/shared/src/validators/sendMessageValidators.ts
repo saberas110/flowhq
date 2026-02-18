@@ -18,3 +18,14 @@ export const sendEmailSchema = z.object({
 
 export type TSendEmailSchema = z.infer<typeof sendEmailSchema>
 export const sendEmailResolver = zodResolver(sendEmailSchema)
+
+
+
+
+export const sendWhatsAppSchema = z.object({
+    text: z.string().min(1),
+    service_account_id: z.coerce.number().min(1)
+})
+
+export type TSendWhatsAppSchema = z.infer<typeof sendEmailSchema>
+export const sendWhatsAppResolver = zodResolver(sendWhatsAppSchema)

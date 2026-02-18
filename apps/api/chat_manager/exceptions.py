@@ -8,3 +8,6 @@ class ServiceAccountValidationError(BaseError):
 
 class OrganizationValidationError(BaseError):
     """Organization ValidationError"""
+
+class ContactValidationError(BaseError):
+    """Contact ValidationError"""
