@@ -127,6 +127,8 @@ export function ConnectEmailDialog({
       reset();
       onOpenChange(false);
       onSuccess?.();
+
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       console.error("Connect email error:", error);
       const message =

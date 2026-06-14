@@ -16,7 +16,6 @@ app.conf.task_serializer = 'json'
 app.conf.accept_content = ['json']
 app.conf.timezone = 'Asia/Tehran'
 app.conf.enable_utc = False
-
 app.conf.task_routes = {
     'email_worker.tasks.*': {'queue': 'email_worker_queue'}
 }
@@ -69,8 +68,6 @@ def stop_worker_task(email_account_id):
         'success': success,
         'account_id': email_account_id,
     }
-
-
 
 @app.task(name='email_worker.tasks.get_status_task')
 def get_status_task():

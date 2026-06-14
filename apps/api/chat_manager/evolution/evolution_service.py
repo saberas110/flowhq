@@ -1,4 +1,3 @@
-import json
 import os
 import requests
 
@@ -79,7 +78,9 @@ class EvolutionService:
         response = requests.get(url, headers=self.headers, params=params)
         data = response.json()
 
-        return data[0] if data else {}
+        if isinstance(data, list) and data:
+            return data[0]
+        return {}
 
     def fetch_all_instances(self):
 

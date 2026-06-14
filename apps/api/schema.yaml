@@ -183,6 +183,17 @@ paths:
       responses:
         '200':
           description: No response body
+  /api/chat/whatsapp/cancel:
+    post:
+      operationId: chat_whatsapp_cancel_create
+      description: Cancel pending connection - delete instance from Evolution
+      tags:
+      - chat
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
   /api/chat/whatsapp/connect:
     post:
       operationId: chat_whatsapp_connect_create
@@ -213,19 +224,6 @@ paths:
       - chat
       security:
       - jwtAuth: []
-      - {}
-      responses:
-        '200':
-          description: No response body
-  /api/chat/whatsapp/send:
-    post:
-      operationId: chat_whatsapp_send_create
-      description: Send a WhatsApp message
-      tags:
-      - chat
-      security:
-      - jwtAuth: []
-      - {}
       responses:
         '200':
           description: No response body
@@ -583,6 +581,20 @@ components:
       - service_type
       - status
       - text
+    MediaTypeEnum:
+      enum:
+      - text
+      - image
+      - video
+      - audio
+      - document
+      type: string
+      description: |-
+        * `text` - Text
+        * `image` - Image
+        * `video` - Video
+        * `audio` - Audio
+        * `document` - Document
     Message:
       oneOf:
       - $ref: '#/components/schemas/EmailMessage'
@@ -612,6 +624,9 @@ components:
         * `location` - Location
         * `contact` - Contact
         * `template` - Template
+    NullEnum:
+      enum:
+      - null
     SendMessageRequest:
       oneOf:
       - $ref: '#/components/schemas/EmailMessageRequest'
@@ -712,11 +727,17 @@ components:
         to_number:
           type: string
           readOnly: true
+        media_type:
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/MediaTypeEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+          - $ref: '#/components/schemas/NullEnum'
         media_url:
           type: string
           format: uri
-          readOnly: true
           nullable: true
+          maxLength: 200
         media_id:
           type: string
           readOnly: true
@@ -727,7 +748,6 @@ components:
           nullable: true
         caption:
           type: string
-          readOnly: true
           nullable: true
         template_name:
           type: string
@@ -750,15 +770,15 @@ components:
         is_media:
           type: boolean
           readOnly: true
+        filename:
+          type: string
       required:
-      - caption
       - created_at
       - from_number
       - id
       - is_me
       - is_media
       - media_id
-      - media_url
       - mime_type
       - sent_at
       - service_icon
@@ -788,9 +808,30 @@ components:
           $ref: '#/components/schemas/StatusEnum'
         message_type:
           $ref: '#/components/schemas/MessageTypeEnum'
+        media_type:
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/MediaTypeEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        file:
+          type: string
+          format: binary
+          writeOnly: true
+        media_url:
+          type: string
+          format: uri
+          nullable: true
+          maxLength: 200
+        caption:
+          type: string
+          nullable: true
         service_account_id:
           type: integer
           writeOnly: true
+        filename:
+          type: string
+          minLength: 1
       required:
       - service_account_id
     WhatsAppServiceAccount:

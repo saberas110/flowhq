@@ -1,7 +1,8 @@
 import { useCallback } from "react";
 import { ReadyState } from "react-use-websocket";
-import { TStatusEnum, TMessageTypeEnum, TLocalMessage, TDirectionEnum,  TSendMessageParams, TSendEmailMessage, TEmailMessageRequest, TWhatsAppMessageRequest, TLocalWhatsAppMessage, TSendWhatsAppMessage, } from "@flowhq/shared";
+import { TFileUploadResponse, TStatusEnum, TMessageTypeEnum, TLocalMessage, TDirectionEnum,  TSendMessageParams, TSendEmailMessage, TEmailMessageRequest, TWhatsAppMessageRequest, TLocalWhatsAppMessage, TSendWhatsAppMessage, } from "@flowhq/shared";
 import { useChatContext } from "@/contexts/ChatContext";
+import { sendFile } from "@/http/chat/sendFile";
 
 
 type TUseSendParams = {
@@ -114,10 +115,27 @@ const sendWhatsAppMessage = useCallback(
     const tempId = generateTempId();
 
     try {
+        let mediaUrl = ''
+        let mediaType = ''
+        let fileName = ''
+
+
+        if (params.file){
+          const formData = new FormData()
+          formData.append('file', params.file)
+
+          const res =await sendFile(formData)
+          mediaUrl = res.url
+          mediaType = res.media_type
+          fileName = res.filename
+        }
       const tempWhatsAppMessage: TLocalWhatsAppMessage = {
+        text: params.text,
+        direction: TDirectionEnum.OUT,
         conversation_id,
         created_at: new Date().toISOString(),
         temp_id: tempId,
+        ...(mediaUrl && {media_url: mediaUrl, message_type: mediaType as TMessageTypeEnum})
       };
   
       setMessages((prev) => [...prev, tempWhatsAppMessage]);

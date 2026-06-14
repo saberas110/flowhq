@@ -8,11 +8,16 @@ class ConversationQuerySet(models.QuerySet):
     def optimized_for_list(self):
         from chat_manager.models import Message, ContactTag
 
-        data = (self.select_related('organization', 'contact')
+        # Use DISTINCT ON (PostgreSQL) to get exactly 1 latest message per conversation
+        # This is much faster than Prefetch with [:1] slice (which is global, not per-parent)
+        data = (self
+                .select_related('organization', 'contact')
                 .prefetch_related(
                     Prefetch(
                         'messages',
-                        queryset=Message.objects.order_by('-created_at')[:1],
+                        queryset=Message.objects.order_by(
+                            'conversation_id', '-created_at'
+                        ).distinct('conversation_id'),
                         to_attr='_cached_last_message'
                     ),
                     Prefetch(
@@ -25,6 +30,7 @@ class ConversationQuerySet(models.QuerySet):
 
     def optimized_for_detail(self, message_limit=50):
         from chat_manager.models import Message, ChannelIdentity
+
         data = self.select_related('organization', 'contact').prefetch_related(
             Prefetch(
                 'messages',
@@ -36,8 +42,6 @@ class ConversationQuerySet(models.QuerySet):
                 queryset=ChannelIdentity.objects.all(),
                 to_attr='_cached_identites'
             )
-             
-            
         )
         return data
 

@@ -1,9 +1,10 @@
 {
     "name": "api",
     "scripts": {
-        "dev": "bash -c 'source .venv/bin/activate && pnpm tunnel'",
+        "dev": "bash -c 'source .venv/bin/activate && pnpm ngrok'",
         "celery": "bash -c 'source .venv/bin/activate && celery -A api worker -l info'",
-        "tunnel": "npx localtunnel --port 8000 --subdomain flowhq-saber-2026",
+        "tunnel": "ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=60 -o ServerAliveCountMax=3 -R 9000:localhost:8000 root@159.65.148.183 -N",
+        "tunnel:lt": "npx localtunnel --port 8000 --subdomain flowhq-saber-2026",
         "ngrok": "ngrok http 8000",
         "schema": "bash -c 'source .venv/bin/activate && python manage.py spectacular --file schema.yaml --validate'",
         "build": ""

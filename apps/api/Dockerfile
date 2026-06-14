@@ -13,10 +13,11 @@ RUN apt-get update && apt-get install -y \
     libpq-dev \
     && rm -rf /var/lib/apt/lists/*
 
-COPY requirements1.txt .
+COPY requirements.txt .
 
 
-RUN pip install --no-cache-dir requirements.txt requirements1.txt
+RUN pip install --no-cache-dir --default-timeout=300 --retries=10 -r requirements.txt
+
 
 
 

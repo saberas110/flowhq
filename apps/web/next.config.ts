@@ -9,7 +9,8 @@ const nextConfig: NextConfig = {
     // Proxy API requests to Django - makes cookies same-origin
     async rewrites() {
         // Use IP for external access, localhost for internal
-        const djangoUrl = process.env.DJANGO_URL || 'http://127.0.0.1:8000';
+        // const djangoUrl = process.env.DJANGO_URL || 'http://api:8000';
+        const djangoUrl = process.env.DJANGO_URL || 'http://api:8000';
         return [
             {
                 source: '/api/:path*',

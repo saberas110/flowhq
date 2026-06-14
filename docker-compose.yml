@@ -1,61 +1,73 @@
-version: "3.8"
-
 services:
   web:
     build:
       context: .
       dockerfile: apps/web/Dockerfile
+    env_file:
+      - ./apps/web/.env.local
+    volumes:
+      - .:/app
+    command: pnpm --filter web run dev     # <--- این خط را اضافه کن
+
     ports:
       - "${WEB_PORT:-6500}:6500"
-    environment:
-      - APP_ENV=production
-      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
-    depends_on:
-      - api
+#    depends_on:
+#      - api
     restart: unless-stopped
     networks:
       - default
 
-  cms:
-    build:
-      context: .
-      dockerfile: apps/cms/Dockerfile
-    ports:
-      - "${CMS_PORT:-7000}:7000"
-    environment:
-      - APP_ENV=production
-      - VITE_API_URL=${VITE_API_URL}
-      - VITE_CLERK_PUBLISHABLE_KEY=${VITE_CLERK_PUBLISHABLE_KEY}
-    depends_on:
-      - api
-    restart: unless-stopped
-    networks:
-      - default
-      
+
+
+
   api:
     build:
-      context: ./apps/api 
+      context: ./apps/api
       dockerfile: Dockerfile
     container_name: django_app
+    env_file:
+      - ./apps/api/.env
     ports:
       - "8000:8000"
-    environment:
-      - DJANGO_SETTINGS_MODULE=api.settings
-      - DB_URL=${DB_URL}  # ← ADD THIS
-      - SECRET_KEY=${SECRET_KEY}  # ← ADD THIS
-      - ALLOWED_HOSTS=${ALLOWED_HOSTS}
-      - HOST=${HOST}
-      - REDIS_PORT=${REDIS_PORT}
-      - FRONT_URL=${FRONT_URL}
-      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
-      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
-      - GOOGLE_REDIRECT_URI=${GOOGLE_REDIRECT_URI}
-      - FRONTEND_LOGIN_SUCCESS_URL=${FRONTEND_LOGIN_SUCCESS_URL}
+    volumes:
+      - ./apps/api:/app
+
 
     networks:
       - default
 
+  postgres:
+    image: postgres:16-alpine
+    container_name: flowhq_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: flowhq
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - flowhq_postgres_data:/var/lib/postgresql/data
+    networks:
+      - default
+
+  redis:
+    image: redis:7-alpine
+    container_name: flowhq_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - flowhq_redis_data:/data
+    networks:
+      - default
+
+volumes:
+  flowhq_postgres_data:
+  flowhq_redis_data:
+
 networks:
-  coolify:
-    external: true
-    name: coolify
+  default:
+    driver: bridge
+
+

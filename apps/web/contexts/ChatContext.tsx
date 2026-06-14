@@ -2,6 +2,7 @@
 import React, {
   createContext,
   useContext,
+  useRef,
   useState,
 } from "react";
 import { TConversation, TMessage, TMessageContext, TServiceAccount } from "@flowhq/shared";
@@ -9,10 +10,13 @@ import { TConversation, TMessage, TMessageContext, TServiceAccount } from "@flow
 export type TChatContext = {
   chatList: TConversation[];
   messages: TMessageContext[];
-  channels: TServiceAccount[]
-  setChannels: React.Dispatch<React.SetStateAction<TServiceAccount[]>>
+  channels: TServiceAccount[];
+  isMessagesLoading: boolean;
+  messagesCache: React.MutableRefObject<Map<number, TMessageContext[]>>;
+  setChannels: React.Dispatch<React.SetStateAction<TServiceAccount[]>>;
   setMessages: React.Dispatch<React.SetStateAction<TMessageContext[]>>;
   setChatList: React.Dispatch<React.SetStateAction<TConversation[]>>;
+  setIsMessagesLoading: React.Dispatch<React.SetStateAction<boolean>>;
 };
 
 
@@ -32,14 +36,22 @@ export const useChatContext = () => {
 export default function ChatProvider({ children }: { children: React.ReactNode }) {
 
   const [chatList, setChatList] = useState<TConversation[]>([]);
-  const [messages, setMessages] = useState<TMessageContext[]>([])
-  const [channels, setChannels] = useState<TServiceAccount[]>([])
+  const [messages, setMessages] = useState<TMessageContext[]>([]);
+  const [channels, setChannels] = useState<TServiceAccount[]>([]);
+  const [isMessagesLoading, setIsMessagesLoading] = useState(false);
+  const messagesCache = useRef<Map<number, TMessageContext[]>>(new Map());
 
 
 
 
   return(
-    <chatContext.Provider value={{chatList, setChatList, messages, setMessages, channels, setChannels}} >
+    <chatContext.Provider value={{
+      chatList, setChatList,
+      messages, setMessages,
+      channels, setChannels,
+      isMessagesLoading, setIsMessagesLoading,
+      messagesCache,
+    }} >
 
       {children}
 

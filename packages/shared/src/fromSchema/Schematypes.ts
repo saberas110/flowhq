@@ -8,6 +8,14 @@ export enum TDirectionEnum {
   OUT = "out"
 }
 
+export enum TMediaTypeEnum {
+  TEXT = "text",
+  IMAGE = "image",
+  VIDEO = "video",
+  AUDIO = "audio",
+  DOCUMENT = "document"
+}
+
 export enum TMessageTypeEnum {
   EMAIL = "email",
   WHATSAPP = "whatsapp",
@@ -160,6 +168,8 @@ export type TLastMessage = {
 
 export type TMessage = TEmailMessage | TWhatsAppMessage | TBaseMessage;
 
+export type TNullEnum = null;
+
 export type TSendMessageRequest = TEmailMessageRequest | TWhatsAppMessageRequest | TBaseMessageRequest;
 
 export type TServiceAccount = TEmailServiceAccount | TWhatsAppServiceAccount | TBaseServiceAccount;
@@ -188,17 +198,19 @@ export type TWhatsAppMessage = {
   message_type?: TMessageTypeEnum;
   readonly from_number: string;
   readonly to_number: string;
+  media_type?: (TMediaTypeEnum | TBlankEnum | TNullEnum) | null;
   /** Format: uri */
-  readonly media_url: string | null;
+  media_url?: string | null;
   readonly media_id: string | null;
   readonly mime_type: string | null;
-  readonly caption: string | null;
+  caption?: string | null;
   readonly template_name: string | null;
   readonly template_language: string | null;
   readonly template_parameters: unknown;
   readonly wa_message_id: string | null;
   readonly wa_status: string | null;
   readonly is_media: boolean;
+  filename?: string;
 };
 
 export type TWhatsAppMessageRequest = {
@@ -207,7 +219,14 @@ export type TWhatsAppMessageRequest = {
   direction?: TDirectionEnum | TBlankEnum;
   status?: TStatusEnum;
   message_type?: TMessageTypeEnum;
+  media_type?: (TMediaTypeEnum | TBlankEnum | TNullEnum) | null;
+  /** Format: binary */
+  file?: string;
+  /** Format: uri */
+  media_url?: string | null;
+  caption?: string | null;
   service_account_id: number;
+  filename?: string;
 };
 
 export type TWhatsAppServiceAccount = {

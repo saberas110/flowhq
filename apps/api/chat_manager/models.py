@@ -237,7 +237,7 @@ class Conversation(CrUpDateMixin):
 
     @property
     def last_message(self):
-        """last message from catch"""
+        """last message from cache"""
         last_messages = getattr(self, "_cached_last_message", None)
         if last_messages is not None:
             return last_messages[0] if last_messages else None
@@ -401,6 +401,8 @@ class Message(PolymorphicModel, CrUpDateMixin):
     class Meta:
         indexes = [
             models.Index(fields=["created_at"]),
+            models.Index(fields=["conversation", "created_at"]),
+            models.Index(fields=["conversation", "-created_at"]),
         ]
 
     def mark_as_sent(self):
@@ -477,7 +479,21 @@ class WhatsAppMessage(Message):
     to_number = models.CharField(max_length=20)
     is_from_me = models.BooleanField(default=False)
 
+
     # Media
+    MEDIA_TYPE = [
+        ("text", "Text"),
+        ("image", "Image"),
+        ("video", "Video"),
+        ("audio", "Audio"),
+        ("document", "Document"),
+    ]
+    media_type = models.CharField(
+        max_length=20, choices=MEDIA_TYPE, default="text"
+        ,null=True, blank=True
+
+        
+    )
     media_url = models.URLField(null=True, blank=True)
     media_id = models.CharField(max_length=200, null=True, blank=True)
     mime_type = models.CharField(max_length=100, null=True, blank=True)

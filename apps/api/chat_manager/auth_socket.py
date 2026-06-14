@@ -1,3 +1,4 @@
+import logging
 from urllib.parse import parse_qs
 from channels.middleware import BaseMiddleware
 from asgiref.sync import async_to_sync, sync_to_async
@@ -9,19 +10,19 @@ from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
 from rest_framework_simplejwt.tokens import RefreshToken
 
 User = get_user_model()
+logger = logging.getLogger(__name__)
 
 
 def _get_token_from_scope(scope, cookie_name='access'):
     # First try to get from cookies
     headers = dict(scope.get("headers", []))
     cookie_header = headers.get(b"cookie", b"").decode()
-    print('cookie_header', cookie_header)
     
     for pair in cookie_header.split("; "):
         if "=" in pair:
             k, v = pair.split("=", 1)
             if k == cookie_name:
-                print(f'✅ Token from cookie: {v[:20]}...')
+                logger.debug('Token found in cookie')
                 return v
     
     # If no cookie, try query string (for cross-domain WebSocket)
@@ -29,12 +30,11 @@ def _get_token_from_scope(scope, cookie_name='access'):
     if qs:
         params = parse_qs(qs)
         token_list = params.get("token") or params.get(cookie_name)
-        print('query_string params:', params.keys())
         if token_list:
-            print(f'✅ Token from query string: {token_list[0][:20]}...')
+            logger.debug('Token found in query string')
             return token_list[0]
     
-    print('❌ No token found in cookie or query string')
+    logger.debug('No token found in cookie or query string')
     return None
 
 
@@ -46,7 +46,7 @@ def _get_user_from_payload(payload):
         user = User.objects.get(id=user_id)
         return user
     except Exception as e:
-        print("Error while getting user in Auth_Socket:", e)
+        logger.warning("Error while getting user in Auth_Socket: %s", e)
         return AnonymousUser()
 
 
@@ -60,22 +60,16 @@ class JWTAuthSocketMiddleWare(BaseMiddleware):
         )
 
     async def __call__(self, scope, receive, send):
-        print('hello from jwt auth socket')
         access = _get_token_from_scope(scope, cookie_name=getattr(settings, "JWT_COOKIE_NAME", "access"))
         refresh = _get_token_from_scope(scope, cookie_name=getattr(settings, "JWT_COOKIE_NAME", "refresh"))
-        new_access = None
 
-        print('token in socket mid',access)
-        print('token in socket mid',refresh)
         if access:
             try:
                 validate_data = self.token_backend.decode(access, verify=True)
-                user =await _get_user_from_payload(validate_data)
-                print('user', user)
+                user = await _get_user_from_payload(validate_data)
                 scope["user"] = user
             except Exception as e:
                 if refresh:
-
                     try:
                         refresh = RefreshToken(refresh)
                         new_access_token = str(refresh.access_token)
@@ -84,7 +78,7 @@ class JWTAuthSocketMiddleWare(BaseMiddleware):
                         user = await _get_user_from_payload(validated_token)
                         scope["user"] = user
                     except (TokenError, InvalidToken) as refresh_error:
-                        print("Error While set user in scope", str(refresh_error))
+                        logger.warning("Error while setting user in scope: %s", refresh_error)
                         scope["user"] = AnonymousUser()
         elif refresh:
             try:
@@ -95,7 +89,7 @@ class JWTAuthSocketMiddleWare(BaseMiddleware):
                 user = await _get_user_from_payload(validated_token)
                 scope["user"] = user
             except (TokenError, InvalidToken) as refresh_error:
-                print("Error While set user in scope", str(refresh_error))
+                logger.warning("Error while setting user in scope: %s", refresh_error)
                 scope["user"] = AnonymousUser()
 
         else:

@@ -78,19 +78,20 @@ class WhatsAppMessageSerializer(BaseMessageSerializer):
     """
     service_account_id = serializers.IntegerField(write_only=True, required=True)
     is_media = serializers.BooleanField(source='is_media_message', read_only=True)
-
+    filename = serializers.CharField(required=False)
+    file = serializers.FileField(write_only=True, required=False)
     class Meta(BaseMessageSerializer.Meta):
         model = WhatsAppMessage
         fields = BaseMessageSerializer.Meta.fields + [
-            'from_number', 'to_number',
+            'from_number', 'to_number','media_type', 'file', 
             'media_url', 'media_id', 'mime_type', 'caption',
             'template_name', 'template_language', 'template_parameters',
             'wa_message_id', 'wa_status', 'is_media',
-            'service_account_id'
+            'service_account_id', 'filename'
         ]
         read_only_fields = list(BaseMessageSerializer.Meta.read_only_fields) + [
             'from_number', 'to_number',
-            'media_url', 'media_id', 'mime_type', 'caption',
+            'media_id', 'mime_type',
             'template_name', 'template_language', 'template_parameters',
             'wa_message_id', 'wa_status', 'is_media',
         ]

@@ -32,7 +32,7 @@ import { useChatContext } from '@/contexts/ChatContext'
 
 
 interface MessageInputProps {
-  conversationId: number
+  conversationId: number | null
 }
 
 

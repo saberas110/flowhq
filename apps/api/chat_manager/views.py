@@ -1,7 +1,8 @@
-import email
 import json
 import base64
 from os import getenv
+import uuid
+from django.core.files.storage import default_storage
 from django.contrib.auth import get_user_model
 from googleapiclient.discovery import build as google_build
 from rest_framework import viewsets
@@ -11,21 +12,17 @@ from rest_framework.response import Response
 from rest_framework import status
 from drf_spectacular.utils import PolymorphicProxySerializer, extend_schema
 
-from chat_manager.evolution.evolution_webhook_service import get_evolution_webhook_service
+from chat_manager.evolution.evolution_webhook_service import (
+    get_evolution_webhook_service,
+)
 from .imap_handler import IMAPHandler
 from .models import (
-    ChannelIdentity,
-    Contact,
-    Conversation,
     EmailAccount,
-    Organization,
     WhatsAppAccount,
-    WhatsAppMessage,
 )
 from .serializers import (
     BaseMessageSerializer,
     ConnectEmailSerializer,
-    PolymorphicMessageSerializer,
     ConversationSerializer,
     ConversationDetailSerializer,
     EmailMessageSerializer,
@@ -49,13 +46,6 @@ from chat_manager.evolution.evolution_service import get_evolution_service
 User = get_user_model()
 
 
-def get_organization(request):
-    organization = request.user.organizations.first()
-    existing_count = WhatsAppAccount.objects.filter(organization=organization).count()
-    instance_name = f"org_{organization.id}_wa_{existing_count + 1}"
-    return instance_name, organization
-
-
 class WhatsAppConnectView(APIView):
     """Create Evolution instance and return QR code URL"""
 
@@ -63,27 +53,16 @@ class WhatsAppConnectView(APIView):
 
     def post(self, request):
 
-        instance_name, organization = get_organization(request)
+        organization = request.user.organizations.first()
+        instance_name = f"org_{organization.id}_{uuid.uuid4().hex[:8]}"
 
         webhook_url = f"{getenv('WEBHOOK_BASE_URL', 'http://localhost:8000')}/api/chat/webhook/whatsapp"
-
         service = get_evolution_service(instance_name)
 
         result = service.create_instance(webhook_url=webhook_url)
 
         instance_data = result.get("instance", {})
         instance_status = instance_data.get("status", "")
-
-        account, created = WhatsAppAccount.objects.update_or_create(
-            instance_name=instance_name,
-            defaults={
-                "organization": organization,
-                "instance_id": instance_data.get("instanceId", ""),
-                "instance_token": result.get("hash", ""),
-                "is_connected": False,
-                "service_type": "whatsapp",
-            },
-        )
 
         if instance_status in ["connecting", "close"]:
             qr_data = service.connect_instance()
@@ -97,25 +76,13 @@ class WhatsAppConnectView(APIView):
                 }
             )
 
-        elif service.is_connected():
-            info = service.get_instance_info()
-            return Response(
-                {
-                    "status": "connected",
-                    "message": "WhatsApp already connected",
-                    "owner": info.get("ownerJid"),
-                    "name": info.get("profileName"),
-                }
-            )
-
-        else:
-            return Response(
-                {
-                    "status": "error",
-                    "details": result,
-                },
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+        return Response(
+            {
+                "status": "error",
+                "details": result,
+            },
+            status=status.HTTP_400_BAD_REQUEST,
+        )
 
 
 class WhatsAppStatusView(APIView):
@@ -125,10 +92,32 @@ class WhatsAppStatusView(APIView):
 
     def get(self, request):
 
-        instance_name, _ = get_organization(request)
+        instance_name = request.query_params.get("instance_name")
+
+        if not instance_name:
+            organization = request.user.organizations.first()
+            accounts = WhatsAppAccount.objects.filter(organization=organization)
+            return Response(
+                {
+                    "accounts": [
+                        {
+                            "instance_name": acc.instance_name,
+                            "phone_number": acc.phone_number,
+                            "push_name": acc.push_name,
+                            "is_connected": acc.is_connected,
+                        }
+                        for acc in accounts
+                    ]
+                }
+            )
 
         service = get_evolution_service(instance_name)
-        state = service.get_connection_state()
+        try:
+            state = service.get_connection_state()
+        except Exception:
+            return Response(
+                {"error": "Instance not found"}, status=status.HTTP_404_NOT_FOUND00
+            )
 
         connected = state.get("instance", {}).get("state") == "open"
 
@@ -150,9 +139,17 @@ class WhatsAppStatusView(APIView):
 class WhatsAppQrView(APIView):
     """Get QR code image"""
 
+    permission_classes = [IsAuthenticated]
+
     def get(self, request):
 
-        instance_name, _ = get_organization(request)
+        instance_name = request.query_params.get("instance_name")
+
+        if not instance_name:
+            return Response(
+                {"error": "instance_name is required"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         service = get_evolution_service(instance_name)
         qr_base64 = service.get_qr_base64()
@@ -166,133 +163,133 @@ class WhatsAppQrView(APIView):
         return Response({"error": "QR not available"}, status=status.HTTP_404_NOT_FOUND)
 
 
-class WhatsAppSendMessageView(APIView):
-    """Send a WhatsApp message"""
+class FileUploadView(APIView):
+    """Upload file, return URL for WhatsApp media sending"""
+    permission_classes = [IsAuthenticated]
 
     def post(self, request):
+        file = request.FILES.get('file')
+        if not file:
+            return Response({'error': 'No file provided'}, status=status.HTTP_400_BAD_REQUEST)
 
-        to_phone = request.data.get("to")
-        message_text = request.data.get("message")
+        path = default_storage.save(f'whatsapp/{file.name}', file)
 
-        if not to_phone or not message_text:
-            return Response(
-                {
-                    "error": "to and message are required",
-                },
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+        base_url = getenv('WEBHOOK_BASE_URL', 'http://localhost:8000')
+        file_url = f'{base_url}/media/{path}'
 
-        instance_name, organization = get_organization(request)
+        content_type = file.content_type or ''
+        if content_type.startswith('image/'):
+            media_type = 'image'
+        elif content_type.startswith('video/'):
+            media_type = 'video'
+        elif content_type.startswith('audio/'):
+            media_type = 'audio'
+        else: 
+            media_type = 'document'
 
-        service = get_evolution_service(instance_name)
+        return Response({
+            'url': file_url,
+            'file_name': file.name,
+            'size': file.size,
+            'content_type': content_type,
+            'media_type': media_type
+        })
 
-        if not service.is_connected():
-            return Response(
-                {"error": "WhatsApp not connected. Scan QR first"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
 
-        result = service.send_text(to_phone=to_phone, message=message_text)
 
-        try:
-            account = WhatsAppAccount.objects.get(instance_name=instance_name)
-            remote_jid = f"{to_phone}@whatsapp.net"
-
-            contact, _ = Contact.objects.get_or_create(
-                name=to_phone, defaults={"avatar_url": None}
-            )
-            identity, _ = ChannelIdentity.objects.get_or_create(
-                channel="whatsapp",
-                service_account=account,
-                external_id=remote_jid,
-                defaults={
-                    "contact": contact,
-                    "organization": organization,
-                },
-            )
-            conversation, _ = Conversation.objects.get_or_create(
-                contact=identity,
-                organization=organization,
-                defaults={"title": to_phone},
-            )
-            WhatsAppMessage.objects.create(
-                whatsapp_account=account,
-                conversation=conversation,
-                wa_message_id=result.get("key", {}).get("id"),
-                from_number=account.phone_number,
-                to_number=to_phone,
-                is_from_me=True,
-                text=message_text,
-                message_type="text",
-                direction="out",
-                status="sent",
-                sender=account.push_name or account.phone_number,
-                wa_status="sent",
-                raw_payload=result,
-            )
-        except Exception as e:
-            print(f"⚠️ Error saving sent message: {e}")
-
-        return Response({"status": "sent", "result": result})
 
 
 class WhatsAppDisconnectView(APIView):
     """Logout from WhatsApp"""
+
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
 
-        instance_name, _ = get_organization(request)
+        instance_name, _ = request.data.get("instance_name")
+
+        if not instance_name:
+            return Response(
+                {"error": "instance_name is required"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        organization = request.user.organizations.first()
 
         service = get_evolution_service(instance_name)
         result = service.logout_instance()
 
         WhatsAppAccount.objects.filter(
             instance_name=instance_name,
+            organization=organization,
         ).update(is_connected=False)
 
-        return Response({'status': 'disconnected', 'result': result})
+        return Response({"status": "disconnected", "result": result})
+
+
+class WhatsAppCancelConnectView(APIView):
+    """Cancel pending connection - delete instance from Evolution"""
+
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        instance_name = request.data.get("instance_name")
+
+        if not instance_name:
+            return Response(
+                {"error": "instance_name is required"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Only delete if NOT in DB (pending)
+        if WhatsAppAccount.objects.filter(instance_name=instance_name).exists():
+            return Response(
+                {"error": "Cannot cancel. Account already connected."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        service = get_evolution_service(instance_name)
+        try:
+            result = service.delete_instance()
+        except Exception:
+            result = {"status": "deleted"}
+
+        return Response({"status": "cancelled", "result": result})
 
 
 class EvolutionWebhookView(APIView):
     """Webhook - receives events from Evolution API"""
+
     permission_classes = [AllowAny]
 
     def post(self, request):
         try:
             data = request.data
-            event = data.get('event')
-            instance = data.get('instance')
-            payload = data.get('data', {})
+            event = data.get("event")
+            instance = data.get("instance")
+            payload = data.get("data", {})
 
-            print(f'📥 Evolution Webhook: {event} | Instance: {instance}')
-            print(f'📥 Full webhook keys: {list(data.keys())}')
+            print(f"📥 Evolution Webhook: {event} | Instance: {instance}")
+            print(f"📥 Full webhook keys: {list(data.keys())}")
 
             webhook_service = get_evolution_webhook_service(instance, payload)
 
             event_handlers = {
-                'connection.update': webhook_service.handle_connection,
-                'messages.upsert': webhook_service.handle_message,
-                'messages.update': webhook_service.handle_message_update,
-                'qrcode.updated': webhook_service.handle_qrcode,
+                "connection.update": webhook_service.handle_connection,
+                "messages.upsert": webhook_service.handle_message,
+                "messages.update": webhook_service.handle_message_update,
+                "qrcode.updated": webhook_service.handle_qrcode,
             }
 
             handler = event_handlers.get(event)
             if handler:
                 return handler()
 
-            return Response({'status': 'ok'})
+            return Response({"status": "ok"})
 
         except Exception as e:
-            print(f'❌ Webhook error: {e}')
-            return Response({'error': str(e)}, status=500)
-
-
-
-
-
-
-
+            print(f"❌ Webhook error: {e}")
+            return Response({"error": str(e)}, status=500)
 
 
 @method_decorator(csrf_exempt, name="dispatch")
@@ -438,11 +435,6 @@ class ConnectEmailView(APIView):
         return Response({"message": "success"}, status=status.HTTP_200_OK)
 
 
-
-
-
-
-
 class SchemaViewSet(viewsets.ViewSet):
     @extend_schema(
         responses={200: ConversationSerializer(many=True)}, description="لیست مکالمات"
@@ -463,27 +455,32 @@ class SchemaViewSet(viewsets.ViewSet):
         serializer = ConversationDetailSerializer(many=True)
         return Response(serializer.data)
 
-    
-
     @extend_schema(
         request=PolymorphicProxySerializer(
-            component_name='SendMessage',
-            serializers=[EmailMessageSerializer, WhatsAppMessageSerializer, BaseMessageSerializer],
+            component_name="SendMessage",
+            serializers=[
+                EmailMessageSerializer,
+                WhatsAppMessageSerializer,
+                BaseMessageSerializer,
+            ],
             resource_type_field_name=None,
         ),
-        responses={200, PolymorphicProxySerializer(
-            component_name='Message',
-            serializers=[EmailMessageSerializer, WhatsAppMessageSerializer, BaseMessageSerializer],
-            resource_type_field_name=None
-        )}
+        responses={
+            200,
+            PolymorphicProxySerializer(
+                component_name="Message",
+                serializers=[
+                    EmailMessageSerializer,
+                    WhatsAppMessageSerializer,
+                    BaseMessageSerializer,
+                ],
+                resource_type_field_name=None,
+            ),
+        },
     )
     @action(detail=False, methods=["post"])
     def send_message(self, request):
         pass
-
-    
-
-
 
     @extend_schema(responses={200: ServiceAccountSchema})
     @action(detail=False, methods=["get"])

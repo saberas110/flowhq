@@ -16,6 +16,7 @@ from asgiref.sync import async_to_sync
 from chat_manager.email_service.gmail_auth import get_email_account
 from chat_manager.models import ChannelIdentity, Conversation, EmailMessage
 from chat_manager.serializers import MessageSerializer
+from email_reply_parser import EmailReplyParser
 
 logger = logging.getLogger(__name__)
 
@@ -475,9 +476,12 @@ def get_history(email_account, start_history_id):
 
 
 def _save_received_email(email_account, email_data):
+
+
     print('='*90)
-    print(f'email_data: {email_data}')
+    print(f' text : {EmailReplyParser.parse_reply(email_data.get('body'))}')
     print('='*90)
+
 
     organization_email = email_account.email
     _from = clean_email(email_data['from_email'])
@@ -516,7 +520,7 @@ def _save_received_email(email_account, email_data):
         defaults={
             'conversation': conversation,
             'sender': _from,
-            'text': email_data.get('snippet', email_data.get('body', '')[:200]),
+            'text': EmailReplyParser.parse_reply(email_data.get('body', '')),
             'subject': email_data['subject'],
             'from_email': email_data['from_email'],
             'to_email': email_data['to_email'],

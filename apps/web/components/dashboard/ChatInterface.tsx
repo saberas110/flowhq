@@ -1,6 +1,6 @@
 "use client";
 import React, { useState } from "react";
-
+import {format} from 'date-fns'
 import {
   ArrowLeft,
   Search,
@@ -24,13 +24,11 @@ const ChatInterface: React.FC = () => {
   const [selectedConversation, setSelectedConversation] = useState<number | null>(null);
   const [inputMessage, setInputMessage] = useState<string>("");
   const { chatList, channels } = usePresenseSocket();
-  console.log('channels', channels);
 
 
 
 
-  const { messages, isConnected } = useChatSocket(selectedConversation);
-  console.log('messages', messages)
+  const { messages, isConnected, isMessagesLoading } = useChatSocket(selectedConversation);
 
 
 
@@ -127,7 +125,9 @@ const ChatInterface: React.FC = () => {
                       {conv.contact?.name}
                     </p>
                     <span className="text-xs text-gray-500 ml-2 flex-shrink-0">
-                      {conv.last_message?.created_at}
+                      {conv.last_message?.created_at
+                      ? format(new Date(conv.last_message.created_at), 'HH:mm')
+                      : ''}
                     </span>
                   </div>
                   <p className="text-xs sm:text-sm text-gray-600 truncate mb-2">
@@ -212,6 +212,14 @@ const ChatInterface: React.FC = () => {
 
         {/* Messages */}
         <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-3 sm:space-y-4">
+          {isMessagesLoading && messages.length === 0 && (
+            <div className="flex items-center justify-center h-full">
+              <div className="flex flex-col items-center space-y-2">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                <p className="text-sm text-gray-500">Loading messages...</p>
+              </div>
+            </div>
+          )}
           {messages.map((msg, index) => (
             <div
               key={index}
@@ -220,17 +228,17 @@ const ChatInterface: React.FC = () => {
               <div
                 className={`flex items-start space-x-2 max-w-[85%] sm:max-w-xs lg:max-w-md ${msg.direction === "out" ? "flex-row-reverse space-x-reverse" : ""}`}
               >
-                <div
-                  className={`h-6 w-6 sm:h-8 sm:w-8 rounded-full flex items-center justify-center flex-shrink-0 ${
-                    msg.service_type === "ai" ? "bg-blue-100" : "bg-gray-100"
-                  }`}
-                >
-                  {msg.service_type === "ai" ? (
-                    <Bot className="h-3 w-3 sm:h-4 sm:w-4 text-blue-600" />
-                  ) : (
-                    <User className="h-3 w-3 sm:h-4 sm:w-4 text-gray-600" />
-                  )}
-                </div>
+                {/*<div*/}
+                {/*  className={`h-6 w-6 sm:h-8 sm:w-8 rounded-full flex items-center justify-center flex-shrink-0 ${*/}
+                {/*    msg.service_type === "ai" ? "bg-blue-100" : "bg-gray-100"*/}
+                {/*  }`}*/}
+                {/*>*/}
+                {/*  {msg.service_type === "ai" ? (*/}
+                {/*    <Bot className="h-3 w-3 sm:h-4 sm:w-4 text-blue-600" />*/}
+                {/*  ) : (*/}
+                {/*    <User className="h-3 w-3 sm:h-4 sm:w-4 text-gray-600" />*/}
+                {/*  )}*/}
+                {/*</div>*/}
                 <div
                   className={`rounded-lg px-3 py-2 sm:px-4 ${
                     msg.direction === "out"
@@ -244,7 +252,9 @@ const ChatInterface: React.FC = () => {
                   <p
                     className={`text-xs mt-1 ${msg.direction === "out" ? "text-blue-100" : "text-gray-500"}`}
                   >
-                    {msg.created_at}
+                    {msg.created_at
+                    ?format(new Date(msg.created_at), 'HH:mm')
+                    :''}
                   </p>
                 </div>
               </div>
@@ -254,7 +264,7 @@ const ChatInterface: React.FC = () => {
 
         {/* Message Input */}
         <MessageInput 
-                      conversationId={selectedConversation?.toString()} />
+                      conversationId={selectedConversation} />
 
       </div>
     </div>
