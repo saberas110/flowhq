@@ -99,7 +99,7 @@ CHANNEL_LAYERS = {
     'default': {
         "BACKEND": "channels_redis.core.RedisChannelLayer",
         "CONFIG": {
-            "hosts": [(os.getenv("HOST"), int(os.getenv("REDIS_PORT", 6379)))]
+            "hosts": [(os.getenv("REDIS_HOST", "redis"), int(os.getenv("REDIS_PORT", 6379)))]
         }
     }
 }
@@ -183,9 +183,23 @@ samesite = os.getenv("SAMESITE", "Lax")
 secure = os.getenv("SECURE")=="True"
 
 
+
+
+
+allowed_origins_env = os.getenv("ALLOWED_ORIGINS", "")
+if allowed_origins_env:
+    # مقادیر رو با اسپلیت جدا می‌کنه و فاصله‌های اضافیش رو می‌گیره
+    CORS_ALLOWED_ORIGINS = [origin.strip() for origin in allowed_origins_env.split(",")]
+    CSRF_TRUSTED_ORIGINS = CORS_ALLOWED_ORIGINS
+else:
+    CORS_ALLOWED_ORIGINS = []
+    CSRF_TRUSTED_ORIGINS = []
+
+
+
 CORS_ALLOW_CREDENTIALS = True
-CORS_ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS").split(",")
-CSRF_TRUSTED_ORIGINS = os.getenv("ALLOWED_ORIGINS").split(",")
+# CORS_ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS").split(",")
+# CSRF_TRUSTED_ORIGINS = os.getenv("ALLOWED_ORIGINS").split(",")
 
 CSRF_COOKIE_SAMESITE = samesite
 CSRF_COOKIE_HTTPONLY = False
