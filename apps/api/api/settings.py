@@ -25,7 +25,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 load_dotenv(os.path.join(BASE_DIR, '.env'))
 
-SECRET_KEY = os.environ.get("SECRET_KEY", '')
+SECRET_KEY = os.environ.get("SECRET_KEY", "django-insecure-dummy-key-for-docker-build-only")
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'api.settings')
 
