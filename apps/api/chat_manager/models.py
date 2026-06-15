@@ -437,7 +437,7 @@ class EmailMessage(Message):
     service_account = models.ForeignKey(
         EmailAccount, models.CASCADE, null=True, related_name="emails"
     )
-    subject = models.CharField()
+    subject = models.CharField(max_length=500)
     from_email = models.EmailField()
     to_email = models.EmailField()
     cc_email = models.JSONField(default=list, blank=True)
