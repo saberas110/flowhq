@@ -23,13 +23,13 @@ WORKDIR /app
 COPY --from=pruner /app/out/json/ .
 COPY --from=pruner /app/out/full/ .
 
-# حالا نصب پکیج‌ها؛ چون فایل‌های json فقط شامل وابستگی‌های لازم هستند، این مرحله فوق‌العاده سریع است
-# تنظیم رجیستری جایگزین برای دور زدن اختلالات اینترنت
-RUN pnpm config set registry https://registry.npmmirror.com/
 
-# حالا نصب پکیج‌ها با تایم‌اوت بالاتر
-RUN pnpm install --frozen-lockfile --network-timeout 1000000
-# انجام عملیات بیلد
+RUN pnpm config set registry https://registry.npmjs.ir/
+
+# نصب پکیج‌ها
+RUN pnpm install --frozen-lockfile
+
+
 RUN pnpm build --filter=web
 
 # ==========================================
