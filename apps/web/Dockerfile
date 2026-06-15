@@ -25,7 +25,13 @@ COPY --from=pruner /app/out/full/ .
 
 
 RUN pnpm config set registry https://registry.npmjs.ir/
+# RUN pnpm config set registry https://registry.npmmirror.com/
 
+# ۲. مقاوم کردن pnpm در برابر قطعی‌های لحظه‌ای اینترنت
+RUN pnpm config set fetch-retries 5
+RUN pnpm config set fetch-retry-mintimeout 20000
+RUN pnpm config set fetch-retry-maxtimeout 120000
+RUN pnpm config set network-timeout 1000000
 # نصب پکیج‌ها
 RUN pnpm install --frozen-lockfile
 
