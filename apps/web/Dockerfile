@@ -55,6 +55,7 @@ COPY --from=builder /app/apps/web/package.json ./apps/web/
 COPY --from=builder /app/apps/web/node_modules ./apps/web/node_modules
 COPY --from=builder /app/apps/web/.next ./apps/web/.next
 COPY --from=builder /app/apps/web/public ./apps/web/public
+COPY --from=builder /app/apps/web/scripts ./apps/web/scripts
 
 # ورود به پوشه اپلیکیشن برای اجرای دستور
 WORKDIR /app/apps/web
