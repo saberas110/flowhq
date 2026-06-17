@@ -9,7 +9,7 @@ export async function middleware(request: NextRequest) {
   const cookie = request.headers.get("cookie");
 
   // Middleware runs server-side, so always use internal Django URL
-  const USER_STATUS_URL = process.env.NEXT_PUBLIC_USER_STATUS;
+  const USER_STATUS_URL = process.env.NEXT_PUBLIC_USER_STATUS!;
 
   console.log("🟦 [Next.js Middleware] Request to:", request.nextUrl.pathname);
   console.log("🍪 [Next.js Middleware] Sending cookies:", cookie);
