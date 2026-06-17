@@ -12,7 +12,7 @@ const nextConfig: NextConfig = {
     async rewrites() {
         // Use IP for external access, localhost for internal
         // const djangoUrl = process.env.DJANGO_URL || 'http://api:8000';
-        const djangoUrl = process.env.DJANGO_URL || 'http://api:8000';
+        const djangoUrl = process.env.NEXT_PUBLIC_DJANGO_URL || 'http://api:8000';
         return [
             {
                 source: '/api/:path*',
