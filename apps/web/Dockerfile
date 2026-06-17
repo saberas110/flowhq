@@ -62,4 +62,4 @@ WORKDIR /app/apps/web
 EXPOSE 6500
 
 # اجرای سرور پروداکشن
-CMD ["pnpm", "ی"]
+CMD ["pnpm", "start"]
