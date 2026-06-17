@@ -1,6 +1,8 @@
 import type {NextConfig} from "next";
 
 const nextConfig: NextConfig = {
+    output: "standalone", // این خط خیلی مهمه!
+
     transpilePackages: ["@flowhq/shared"],
     env: {
         HOST: "127.0.0.1",
