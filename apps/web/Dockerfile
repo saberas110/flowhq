@@ -63,4 +63,4 @@ WORKDIR /app/apps/web
 EXPOSE 6500
 
 # اجرای سرور پروداکشن
-CMD ["pnpm", "start"]
+CMD ["node", "apps/web/server.js"]
